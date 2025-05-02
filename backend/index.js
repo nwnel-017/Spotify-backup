@@ -18,7 +18,7 @@ const getSpotifyAccessToken = async () => {
   const authString = Buffer.from(`${clientId}:${clientSecret}`).toString(
     "base64"
   );
-  //testing
+  //testing - things are working - but spotify things redirect URI is insecure
   console.log("Spotify Client ID:", clientId);
   console.log("Spotify Client Secret:", clientSecret);
   try {
@@ -49,6 +49,6 @@ app.use("/api/spotify", spotifyRoutes); // Use the Spotify routes
 const authRoutes = require("./routes/auth");
 app.use("/api/auth", authRoutes);
 
-app.listen(PORT, () => {
-  console.log(`Backend running at https://192.168.1.5:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Backend running at http://192.168.0.4:${PORT}`);
 });

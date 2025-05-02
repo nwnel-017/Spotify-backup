@@ -6,14 +6,20 @@ const router = express.Router();
 // Replace these with your actual Spotify app info
 const client_id = process.env.SPOTIFY_CLIENT_ID;
 const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
-const redirect_uri = "http://192.168.1.5:5000/api/auth/callback"; // Change this if you deploy!
+// const redirect_uri = "http://192.168.0.4:5000/api/auth/callback/spotify"; // Change this if you deploy!
+const redirect_uri =
+  "https://b9f6-198-245-107-80.ngrok-free.app/api/auth/callback"; // testing using ngrok - run ngrok http 5000 from command line to get new URL
+
+//Test route to check if the backend is working
+router.get("/", (req, res) => {
+  //heres a test route to see if backend is running
+  res.send("Backend is up and running");
+});
 
 // 1. Redirect user to Spotify login
 router.get("/login", (req, res) => {
   console.log("Reached backend route. Redirecting to Spotify login...");
   const scope = "playlist-read-private playlist-read-collaborative";
-  console.log("client_id from backend", client_id);
-  console.log("client_secret from backend", client_secret);
   console.log("redirect_uri from backend", redirect_uri);
   const queryParams = querystring.stringify({
     response_type: "code",
@@ -48,17 +54,17 @@ router.get("/callback", async (req, res) => {
         }
       )
       .then((response) => {
-        console.log("Response from Spotify:", response.data);
         return response;
       });
 
-    const { access_token, refresh_token } = response.data;
+    const { access_token, refresh_token } = response.data; //TODO: save refresh token and implement refresh token logic
 
-    // Store tokens in session, DB, memory, etc. (for now just send back)
-    res.json({
-      access_token,
-      refresh_token,
-    });
+    //Store tokens in session, DB, memory, etc. (for now just send back)
+    res.redirect(`http://localhost:3000/home?access_token=${access_token}`);
+
+    console.log("Access token:", access_token);
+
+    // res.redirect(`http://192.168.0.4:3000/home?access_token=${access_token}`);
   } catch (error) {
     console.error("Error getting tokens", error.response.data);
     res.status(400).json({ error: "Failed to get tokens" });
