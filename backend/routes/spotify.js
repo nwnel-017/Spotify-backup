@@ -27,8 +27,8 @@ router.get("/search", async (req, res) => {
 
 //GET playlists from a user
 //To Do: finish implementation
-router.get("/playlists/:userId", async (req, res) => {
-  const userId = req.params.userId;
+router.get("/playlists", async (req, res) => {
+  console.log("Hello from playlists route"); //getting hit
   const accessToken = req.headers.authorization?.split(" ")[1]; // Expect "Bearer {access_token}"
 
   if (!accessToken) {
@@ -37,7 +37,7 @@ router.get("/playlists/:userId", async (req, res) => {
 
   try {
     const response = await axios.get(
-      `https://api.spotify.com/v1/users/${userId}/playlists`,
+      `https://api.spotify.com/v1/me/playlists`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -92,11 +92,38 @@ router.get("/profile", async (req, res) => {
         Authorization: `Bearer ${accessToken}`,
       },
     });
-    console.log("Profile data:", response.data); // Log the profile data
     res.json(response.data);
   } catch (error) {
     console.error("Error fetching profile info", error.response.data);
     res.status(500).json({ error: "Failed to fetch profile" });
+  }
+});
+
+router.post("/refresh_token", async (req, res) => {
+  const refreshToken = req.body.refresh_token; // Get refresh token from request body
+  const clientId = process.env.SPOTIFY_CLIENT_ID;
+  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+
+  try {
+    const response = await axios.post(
+      "https://accounts.spotify.com/api/token",
+      new URLSearchParams({
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+        client_id: clientId,
+        client_secret: clientSecret,
+      }),
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    );
+
+    res.json(response.data);
+  } catch (error) {
+    console.error("Error refreshing token", error.response.data);
+    res.status(500).json({ error: "Failed to refresh token" });
   }
 });
 
