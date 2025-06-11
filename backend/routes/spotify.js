@@ -30,6 +30,8 @@ router.get("/search", async (req, res) => {
 router.get("/playlists", async (req, res) => {
   console.log("Hello from playlists route"); //getting hit
   const accessToken = req.headers.authorization?.split(" ")[1]; // Expect "Bearer {access_token}"
+  const limit = req.query.limit || 5;
+  const offset = req.query.offset || 0;
 
   if (!accessToken) {
     return res.status(401).json({ error: "Missing access token" });
@@ -41,6 +43,10 @@ router.get("/playlists", async (req, res) => {
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
+        },
+        params: {
+          limit,
+          offset,
         },
       }
     );
