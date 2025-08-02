@@ -59,6 +59,7 @@ router.get("/playlists", async (req, res) => {
 });
 
 // GET playlist tracks (requires access token!)
+//To Do: Move not api-related code to SpotifyService.js
 router.get("/playlist/:playlistId", async (req, res) => {
   const playlistId = req.params.playlistId;
   const accessToken = req.headers.authorization?.split(" ")[1]; // Expect "Bearer {access_token}"
