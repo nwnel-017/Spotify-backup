@@ -2,7 +2,7 @@ const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 const createCsvWriter = require("csv-writer").createObjectCsvWriter;
-const { BackupLog } = require("../models"); // Optional Sequelize model
+// const { BackupLog } = require("../models"); // Optional Sequelize model
 
 const BACKUP_DIR = path.join(__dirname, "..", "backups");
 

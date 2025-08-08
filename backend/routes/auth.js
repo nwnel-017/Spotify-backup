@@ -7,7 +7,7 @@ const router = express.Router();
 const client_id = process.env.SPOTIFY_CLIENT_ID;
 const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
 // const redirect_uri = "http://192.168.0.4:5000/api/auth/callback/spotify"; // Change this if you deploy!
-const redirect_uri = "https://d1d75f1e94cc.ngrok-free.app/api/auth/callback"; // testing using ngrok - run ngrok http 5000 from command line to get new URL
+const redirect_uri = "https://f90ed0d1de56.ngrok-free.app/api/auth/callback"; // testing using ngrok - run ngrok http 5000 from command line to get new URL
 
 //Test route to check if the backend is working
 router.get("/", (req, res) => {

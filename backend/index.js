@@ -14,7 +14,7 @@ let accessToken = "";
 const getSpotifyAccessToken = async () => {
   const clientId = process.env.SPOTIFY_CLIENT_ID;
   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
-  const tokenUrl = "https://accounts.spotify.com/api/token";
+  const tokenUrl = `${process.env.SPOTIFY_TOKEN_URL}`;
   const authString = Buffer.from(`${clientId}:${clientSecret}`).toString(
     "base64"
   );
@@ -48,6 +48,7 @@ const spotifyRoutes = require("./routes/spotify"); // Import the Spotify routes
 app.use("/api/spotify", spotifyRoutes); // Use the Spotify routes
 const authRoutes = require("./routes/auth");
 app.use("/api/auth", authRoutes);
+const backupRoutes = require("./routes/backup"); // Import the backup routes
 app.use("/api/backup", backupRoutes); // Routes for backup operations
 
 app.listen(PORT, "0.0.0.0", () => {

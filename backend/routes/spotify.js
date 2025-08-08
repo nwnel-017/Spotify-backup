@@ -28,7 +28,8 @@ router.get("/search", async (req, res) => {
 //GET playlists from a user
 //To Do: finish implementation
 router.get("/playlists", async (req, res) => {
-  console.log("Hello from playlists route"); //getting hit
+  //To Do: playlists route seems to be getting hit too many times
+  // console.log("Hello from playlists route"); //getting hit
   const accessToken = req.headers.authorization?.split(" ")[1]; // Expect "Bearer {access_token}"
   const limit = req.query.limit || 5;
   const offset = req.query.offset || 0;
