@@ -6,6 +6,11 @@ const createCsvWriter = require("csv-writer").createObjectCsvWriter;
 
 const BACKUP_DIR = path.join(__dirname, "..", "backups");
 
+// Ensure backup folder exists
+if (!fs.existsSync(BACKUP_DIR)) {
+  fs.mkdirSync(BACKUP_DIR);
+}
+
 async function fetchPlaylistTracks(accessToken, playlistId) {
   const tracks = [];
   let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
@@ -76,9 +81,9 @@ async function handleWeeklyBackup({ accessToken, playlistId }) {
 
   await csvWriter.writeRecords(currentTracks);
 
-  if (BackupLog) {
-    await BackupLog.create({ playlistId, filename: fileName });
-  }
+  // if (BackupLog) {
+  //   await BackupLog.create({ playlistId, filename: fileName });
+  // }
 
   console.log(`✅ Weekly backup saved: ${fileName}`);
 }

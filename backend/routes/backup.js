@@ -1,10 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const {
-  handleWeeklyBackupController,
-} = require("../controllers/BackupController");
+const { runWeeklyBackup } = require("../controllers/BackupController");
 
 // POST /api/backup/weekly
-router.post("/weekly", handleWeeklyBackupController);
+router.post("/weekly", runWeeklyBackup);
 
 module.exports = router;
