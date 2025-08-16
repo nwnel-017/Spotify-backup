@@ -1,3 +1,4 @@
+const { access } = require("fs");
 const spotifyService = require("../services/spotifyService");
 
 exports.search = async (req, res) => {
@@ -9,6 +10,7 @@ exports.search = async (req, res) => {
   }
 };
 
+//To Do: refactor using spotifyService
 exports.loginUser = (req, res) => {
   const scope = "playlist-read-private playlist-read-collaborative";
   const redirect_uri = process.env.REDIRECT_URI;
@@ -30,7 +32,6 @@ exports.handleCallback = async (req, res) => {
 
   try {
     const response = await spotifyService.exchangeCodeForToken(
-      //this hasnt been implemented yet
       code,
       redirect_uri
     );
@@ -45,5 +46,70 @@ exports.handleCallback = async (req, res) => {
       error.response?.data || error.message
     );
     res.status(400).json({ error: "Failed to get tokens" });
+  }
+};
+
+exports.getPlaylistTracks = async (req, res) => {
+  const playlistId = req.params.playlistId;
+  const accessToken = req.accessToken;
+  try {
+    const data = await spotifyService.getPlaylistTracks(
+      playlistId,
+      accessToken
+    );
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching playlist tracks", error.response.data);
+    res.status(500).json({ error: "Failed to fetch playlist tracks" });
+  }
+};
+
+exports.getPlaylists = async (req, res) => {
+  const accessToken = req.headers.authorization?.split(" ")[1]; // Expect "Bearer {access_token}"
+
+  if (!accessToken) {
+    return res.status(401).json({ error: "Missing access token" });
+  }
+
+  try {
+    const data = await spotifyService.getPlaylists(accessToken);
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching playlists", error.response.data);
+    res.status(500).json({ error: "Failed to fetch playlists" });
+  }
+};
+
+exports.getProfile = async (req, res) => {
+  const accessToken = req.headers.authorization?.split(" ")[1]; // Expect "Bearer {access_token}"
+
+  if (!accessToken) {
+    return res.status(401).json({ error: "Missing access token" });
+  }
+
+  try {
+    const data = await spotifyService.getProfileInfo(accessToken);
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching profile info", error.response.data);
+    res.status(500).json({ error: "Failed to fetch profile" });
+  }
+};
+
+exports.getRefreshToken = async (req, res) => {
+  const refreshToken = req.body.refresh_token; // Get refresh token from request body
+  const clientId = process.env.SPOTIFY_CLIENT_ID;
+  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+
+  try {
+    const response = await spotifyService.refreshAccessToken(
+      refreshToken,
+      clientId,
+      clientSecret
+    );
+    res.json(response.data);
+  } catch (error) {
+    console.error("Error refreshing token", error.response.data);
+    res.status(500).json({ error: "Failed to refresh token" });
   }
 };
