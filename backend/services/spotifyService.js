@@ -1,6 +1,7 @@
 // /services/spotifyAuth.js
 require("dotenv").config();
 const axios = require("axios");
+const supabase = require("../utils/supabase/supabaseClient");
 
 let accessToken = "";
 const tokenUrl = process.env.SPOTIFY_TOKEN_URL;
@@ -34,14 +35,14 @@ async function fetchAccessToken() {
   }
 }
 
-function getAuthHeader() {
-  return { Authorization: `Bearer ${accessToken}` };
-}
+// function getAuthHeader() {
+//   return { Authorization: `Bearer ${accessToken}` };
+// }
 
-function startTokenRefresh() {
-  fetchAccessToken();
-  setInterval(fetchAccessToken, TOKEN_REFRESH_INTERVAL);
-}
+// function startTokenRefresh() {
+//   fetchAccessToken();
+//   setInterval(fetchAccessToken, TOKEN_REFRESH_INTERVAL);
+// }
 
 async function exchangeCodeForToken(code, redirect_uri) {
   const authString = Buffer.from(`${clientId}:${clientSecret}`).toString(
@@ -105,6 +106,28 @@ async function refreshAccessToken(refreshToken) {
   }
 }
 
+async function storeTokens(userId, accessToken, refreshToken, expiresIn) {
+  // Implement storing tokens in your database (e.g., Supabase)
+  const expires_at = new Date(Date.now() + expires_in * 1000).toISOString();
+
+  const { data, error } = await supabase.from("spotify_users").upsert(
+    {
+      user_id: userId,
+      access_token,
+      refresh_token,
+      expires_at,
+    },
+    { onConflict: ["user_id"] } // ensures update if user_id exists
+  );
+
+  if (error) {
+    console.error("Error saving Spotify tokens:", error);
+    throw new Error("Failed to save Spotify tokens");
+  }
+
+  return data;
+}
+
 async function getPlaylistTracks(playlistId, accessToken) {
   try {
     const response = await axios.get(
@@ -139,25 +162,28 @@ async function getPlaylists(accessToken) {
   }
 }
 
-async function getProfileInfo(accessToken) {
+async function getProfileInfo(req, res) {
+  const accessToken = req.spotifyAccessToken; // Use the token from the request
+  if (!accessToken) {
+    // ❌ accessToken doesn't exist here
+    throw new Error("Missing access token");
+  }
   try {
-    const response = await axios.get("https://api.spotify.com/v1/me", {
-      headers: { Authorization: `Bearer ${accessToken}` },
+    const response = await axios.get(`${process.env.SPOTIFY_API_BASE_URL}/me`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`, // attach token
+      },
     });
-    return response.data;
+    return response.data; // Spotify returns user object here
   } catch (error) {
-    throw {
-      status: error.response?.status || 500,
-      message: error.response?.data || "Failed to fetch profile info",
-    };
+    console.error("Spotify API error:", error.response?.data || error.message);
+    throw new Error("Failed to fetch profile info from Spotify");
   }
 }
 
 module.exports = {
-  startTokenRefresh,
-  getAuthHeader,
-  exchangeCodeForToken,
   refreshAccessToken,
+  exchangeCodeForToken,
   getPlaylistTracks,
   getPlaylists,
   getProfileInfo,

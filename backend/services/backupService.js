@@ -3,7 +3,6 @@ const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 // const createCsvWriter = require("csv-writer").createObjectCsvWriter;
-const { supabase } = require("../supabaseClient.js");
 
 const BACKUP_DIR = path.join(__dirname, "..", "backups");
 
@@ -54,42 +53,42 @@ async function handleWeeklyBackup({ accessToken, playlistId }) {
     const currentHash = getPlaylistHash(currentTracks);
 
     // Get last backup from Supabase
-    const { data: lastBackup, error: fetchError } = await supabase
-      .from("weekly_backups")
-      .select("hash")
-      .eq("user_id", userId)
-      .eq("playlist_id", playlistId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
+    // const { data: lastBackup, error: fetchError } = await supabase
+    //   .from("weekly_backups")
+    //   .select("hash")
+    //   .eq("user_id", userId)
+    //   .eq("playlist_id", playlistId)
+    //   .order("created_at", { ascending: false })
+    //   .limit(1)
+    //   .single();
 
-    if (fetchError && fetchError.code !== "PGRST116") {
-      // ignore "no rows found"
-      throw fetchError;
-    }
+    // if (fetchError && fetchError.code !== "PGRST116") {
+    //   // ignore "no rows found"
+    //   throw fetchError;
+    // }
 
-    // If hash matches last backup, skip insert
-    if (lastBackup && lastBackup.hash === currentHash) {
-      console.log(
-        `No changes detected for playlist ${playlistName} — skipping backup.`
-      );
-      return;
-    }
+    // // If hash matches last backup, skip insert
+    // if (lastBackup && lastBackup.hash === currentHash) {
+    //   console.log(
+    //     `No changes detected for playlist ${playlistName} — skipping backup.`
+    //   );
+    //   return;
+    // }
 
     // Insert new backup
-    const { data, error: insertError } = await supabase
-      .from("weekly_backups")
-      .insert([
-        {
-          user_id: userId,
-          playlist_id: playlistId,
-          playlist_name: playlistName,
-          backup_data: currentTracks,
-          hash: currentHash,
-        },
-      ]);
+    // const { data, error: insertError } = await supabase
+    //   .from("weekly_backups")
+    //   .insert([
+    //     {
+    //       user_id: userId,
+    //       playlist_id: playlistId,
+    //       playlist_name: playlistName,
+    //       backup_data: currentTracks,
+    //       hash: currentHash,
+    //     },
+    //   ]);
 
-    if (insertError) throw insertError;
+    // if (insertError) throw insertError;
     console.log(`✅ New backup inserted for playlist ${playlistName}`);
   } catch (error) {
     console.error("Error during weekly backup:", error);

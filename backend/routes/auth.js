@@ -1,25 +1,22 @@
 const express = require("express");
-const axios = require("axios");
-const querystring = require("querystring");
+const authMiddleware = require("../middleware/authMiddleware");
 const router = express.Router();
 const {
-  loginUser,
+  linkSpotify,
   handleCallback,
+  refreshToken,
 } = require("../controllers/spotifyController");
 
-// Replace these with your actual Spotify app info
-const client_id = process.env.SPOTIFY_CLIENT_ID;
-const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
-
-//Test route to check if the backend is working
-router.get("/", (req, res) => {
-  res.send("Backend is up and running");
-});
-
 // 1. Redirect user to Spotify login -> handled by spotifyController.js
-router.get("/login", loginUser);
+router.get("/linkAccount", authMiddleware, linkSpotify);
 
 // 2. Handle callback and exchange code for access token
 router.get("/callback", handleCallback);
+
+router.get("/refreshToken", refreshToken);
+
+router.get("/logout", (req, res) => {
+  console.log("logout not implemented yet");
+});
 
 module.exports = router;

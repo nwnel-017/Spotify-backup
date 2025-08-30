@@ -1,11 +1,23 @@
 // app.js
 const express = require("express");
-const spotifyController = require("./controllers/spotifyController");
+const cors = require("cors");
+const cookieParser = require("cookie-parser");
 
 const app = express();
 
+// ✅ Apply CORS here (before routes)
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  })
+);
+
 // Middlewares (JSON parsing, etc.)
 app.use(express.json());
+app.use(cookieParser());
+
+app.set("trust proxy", 1); // 🛠️ Add this before routes
 
 //Routes
 const spotifyRoutes = require("./routes/spotify"); // Import the Spotify routes
