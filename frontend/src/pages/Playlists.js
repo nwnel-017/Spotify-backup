@@ -5,12 +5,12 @@ import {
   triggerWeeklyBackup,
 } from "../services/SpotifyService";
 import { convertTracksToCSV, downloadCSV } from "../utils/csv";
-import { useAuth } from "../context/AuthContext";
+// import { useAuth } from "../context/AuthContext";
 
 //To Do: Test weekly backups
 //To do: refactor -> handleBackup() should be calling a backend route to handle the backup, then call utils/csv to convert and download
 const Playlists = () => {
-  const { accessToken } = useAuth();
+  // const { accessToken } = useAuth();
   const [allPlaylists, setAllPlaylists] = useState([]);
   const [filteredPlaylists, setFilteredPlaylists] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,8 +21,8 @@ const Playlists = () => {
 
   useEffect(() => {
     const fetchPlaylists = async () => {
-      if (!accessToken) return;
       setLoading(true);
+      console.log("fetching playlists");
 
       let fetchedPlaylists = [];
       let offset = 0;
@@ -30,8 +30,7 @@ const Playlists = () => {
 
       try {
         do {
-          const data = await fetchUserPlaylists(accessToken, offset, limit);
-
+          const data = await fetchUserPlaylists(offset, limit);
           fetchedPlaylists = [...fetchedPlaylists, ...(data.items || [])];
           total = data.total || 0;
           offset += 50;
@@ -45,7 +44,7 @@ const Playlists = () => {
     };
 
     fetchPlaylists();
-  }, [accessToken]);
+  }, []);
 
   // Handle search query
   useEffect(() => {
@@ -77,7 +76,7 @@ const Playlists = () => {
 
       while (true) {
         const data = await backupPlaylist(
-          accessToken,
+          // accessToken,
           playlistId,
           limit,
           offset
@@ -98,7 +97,7 @@ const Playlists = () => {
   const handleWeeklyBackup = async (playlistId, playlistName) => {
     try {
       // Call your backend to trigger the weekly backup
-      await triggerWeeklyBackup(accessToken, playlistId, playlistName);
+      await triggerWeeklyBackup(playlistId, playlistName);
 
       // Notify user
       alert(`✅ Weekly backup successful for "${playlistName}"`);

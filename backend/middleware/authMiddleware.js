@@ -1,5 +1,6 @@
 const axios = require("axios");
 const jwt = require("jsonwebtoken");
+const supabase = require("../utils/supabase/supabaseClient");
 
 // retrieve JWT from headers and verify
 // get user id from decoded JWT
@@ -18,6 +19,7 @@ module.exports = async function (req, res, next) {
     } catch (err) {
       return res.status(401).json({ error: "JWT expired or invalid" });
     }
+
     req.supabaseUser = decoded; // contains `sub`, `email`, etc.
 
     next();

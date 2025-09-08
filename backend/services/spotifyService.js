@@ -2,6 +2,7 @@
 require("dotenv").config();
 const axios = require("axios");
 const supabase = require("../utils/supabase/supabaseClient");
+const jwt = require("jsonwebtoken");
 
 let accessToken = "";
 const tokenUrl = process.env.SPOTIFY_TOKEN_URL;
@@ -35,27 +36,30 @@ async function fetchAccessToken() {
   }
 }
 
-// function getAuthHeader() {
-//   return { Authorization: `Bearer ${accessToken}` };
-// }
+async function exchangeAndStoreTokens(code, state) {
+  //Sign the JWT token and get userId
+  let decoded, userId;
+  try {
+    decoded = jwt.verify(state, process.env.SUPABASE_JWT_SECRET);
+    userId = decoded.userId;
+  } catch (err) {
+    console.error("Invalid or expired state JWT:", err);
+    throw new Error("Invalid state parameter");
+  }
 
-// function startTokenRefresh() {
-//   fetchAccessToken();
-//   setInterval(fetchAccessToken, TOKEN_REFRESH_INTERVAL);
-// }
-
-async function exchangeCodeForToken(code, redirect_uri) {
   const authString = Buffer.from(`${clientId}:${clientSecret}`).toString(
     "base64"
   );
 
+  //exchange code for tokens from spotify
+  let tokens;
   try {
-    const response = await axios.post(
+    tokens = await axios.post(
       tokenUrl,
       new URLSearchParams({
         grant_type: "authorization_code",
         code: code,
-        redirect_uri: redirect_uri,
+        redirect_uri: `${process.env.REDIRECT_URI}`, //not defined
       }).toString(),
       {
         headers: {
@@ -64,8 +68,6 @@ async function exchangeCodeForToken(code, redirect_uri) {
         },
       }
     );
-
-    return response; // Contains access_token, refresh_token, expires_in
   } catch (error) {
     console.error(
       "❌ Error exchanging code for token:",
@@ -73,6 +75,25 @@ async function exchangeCodeForToken(code, redirect_uri) {
     );
     throw error;
   }
+
+  const { access_token, refresh_token, expires_in } = tokens.data;
+
+  //store tokens in supabase
+  try {
+    const response = await supabase.from("spotify_users").upsert(
+      {
+        user_id: userId,
+        access_token,
+        refresh_token,
+        expires_at: new Date(Date.now() + expires_in * 1000).toISOString(),
+      },
+      { onConflict: ["user_id"] } // ensures update if user_id exists
+    );
+  } catch (error) {
+    console.error("Error saving Spotify tokens to supabase:", error);
+    throw new Error("Failed to save Spotify tokens to server");
+  }
+  return { access_token, refresh_token, expires_in };
 }
 
 async function refreshAccessToken(refreshToken) {
@@ -94,9 +115,10 @@ async function refreshAccessToken(refreshToken) {
         },
       }
     );
+    console.log("response from refreshing token in service: " + response.data);
 
-    accessToken = response.data.access_token;
-    return response.data; // Contains new access_token and possibly a new refresh_token
+    // accessToken = response.data.access_token;
+    return response; // Contains new access_token and possibly a new refresh_token
   } catch (error) {
     console.error(
       "❌ Error refreshing access token:",
@@ -153,8 +175,10 @@ async function getPlaylists(accessToken) {
         headers: { Authorization: `Bearer ${accessToken}` },
       }
     );
+    console.log("Response from Spotify API getPlaylists:", response.data);
     return response.data;
   } catch (error) {
+    console.error("Spotify API error:", error.response?.data || error.message);
     throw {
       status: error.response?.status || 500,
       message: error.response?.data || "Failed to fetch playlists",
@@ -162,10 +186,8 @@ async function getPlaylists(accessToken) {
   }
 }
 
-async function getProfileInfo(req, res) {
-  const accessToken = req.spotifyAccessToken; // Use the token from the request
+async function getProfileInfo(accessToken) {
   if (!accessToken) {
-    // ❌ accessToken doesn't exist here
     throw new Error("Missing access token");
   }
   try {
@@ -183,7 +205,7 @@ async function getProfileInfo(req, res) {
 
 module.exports = {
   refreshAccessToken,
-  exchangeCodeForToken,
+  exchangeAndStoreTokens,
   getPlaylistTracks,
   getPlaylists,
   getProfileInfo,

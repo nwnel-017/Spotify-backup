@@ -54,4 +54,33 @@ describe("Authentication Tests", () => {
       process.env.REDIRECT_URI
     );
   });
+
+  test("should return a new access token when spotify refresh succeeds", async () => {
+    const fakeResponse = {
+      access_token: "newAccess123",
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "playlist-read-private",
+      refresh_token: "newRefresh456",
+    };
+
+    axios.post.mockResolvedValue({ data: fakeResponse });
+
+    const result = await spotifyService.refreshAccessToken("oldRefresh123");
+
+    // ✅ Assertions
+    expect(axios.post).toHaveBeenCalledTimes(1);
+    expect(result).toEqual(fakeResponse);
+    expect(result.access_token).toBe("newAccess123");
+  });
+
+  test("should throw an error when Spotify refresh fails", async () => {
+    axios.post.mockRejectedValue({
+      response: { data: { error: "invalid_grant" } },
+    });
+
+    await expect(
+      spotifyService.refreshAccessToken("badRefreshToken")
+    ).rejects.toThrow("invalid_grant");
+  });
 });

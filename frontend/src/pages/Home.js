@@ -11,16 +11,9 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [accountNotLinked, setAccountNotLinked] = useState(false);
 
-  const handleAccountLink = () => {
-    //window.location.href = `${process.env.REACT_APP_API_BASE_URL}/auth/linkAccount`;
-    linkSpotifyAccount();
-  };
-
   // To Do: implement logout to refresh supabase JWT
   // if that fails, log out user
   const handleUnauthorized = () => {
-    // To Do: try to refresh token first
-    // If refresh fails, log out user
     console.log("User is not logged in. Redirecting to login page.");
     //logout();
   };
@@ -62,7 +55,7 @@ const Home = () => {
           Your Spotify account is not linked. Please link your account to access
           all features.
         </h1>
-        <button onClick={handleAccountLink}>
+        <button onClick={linkSpotifyAccount}>
           Click Here to Link Your Account
         </button>
       </div>
