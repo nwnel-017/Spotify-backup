@@ -93,7 +93,6 @@ exports.getPlaylists = async (req, res) => {
 
   try {
     const response = await spotifyService.getPlaylists(spotifyToken);
-    console.log("Playlist data in controller: ", response);
     res.json(response);
   } catch (error) {
     console.error("Error fetching playlists", error.response.data);

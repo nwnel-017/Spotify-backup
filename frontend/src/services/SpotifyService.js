@@ -1,5 +1,6 @@
 import axios from "axios";
 import { supabase } from "../supabase/supabaseClient";
+import csv from "../utils/csv";
 
 export const getSpotifyProfile = async () => {
   //get supabase token
@@ -65,10 +66,41 @@ export const fetchUserPlaylists = async (offset = 0, limit = 50) => {
   return res.data;
 };
 
-export async function backupPlaylist(accessToken, playlistId, limit, offset) {
-  const response = await axios.post(
-    `${process.env.API_BASE_URL}/backup/single`
+export async function backupPlaylist(playlistId, playlistName) {
+  const session = await supabase.auth.getSession();
+  const token = session.data.session.access_token;
+
+  console.log("service - Backing up playlist:", playlistId, playlistName);
+
+  if (!playlistId || !playlistName) {
+    throw new Error("Playlist ID or name missing!");
+  }
+  console.log(
+    "calling backend api route with: " +
+      `${process.env.REACT_APP_API_BASE_URL}/backup/single/${playlistId}`
   );
+  try {
+    const response = await axios.post(
+      `${process.env.REACT_APP_API_BASE_URL}/backup/single/${playlistId}`,
+      {},
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: "blob", // Set response type to blob
+      }
+    );
+    const blob = response.data; // Access binary data from response.data
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const fileName = csv.getFileName(playlistName);
+    link.href = url;
+    link.download = `${fileName}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error("Error triggering backup:", error);
+    throw error;
+  }
 }
 
 export async function triggerWeeklyBackup(

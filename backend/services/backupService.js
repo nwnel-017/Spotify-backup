@@ -3,6 +3,8 @@ const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 // const createCsvWriter = require("csv-writer").createObjectCsvWriter;
+const spotifyService = require("./spotifyService");
+const { tracksToCsv } = require("../utils/file/csvUtils");
 
 const BACKUP_DIR = path.join(__dirname, "..", "backups");
 
@@ -46,6 +48,7 @@ function getPlaylistHash(tracks) {
     .digest("hex");
 }
 
+//need to rewrite
 async function handleWeeklyBackup({ accessToken, playlistId }) {
   console.log("reached backupService.js endpoint");
   try {
@@ -139,20 +142,22 @@ async function handleWeeklyBackup({ accessToken, playlistId }) {
   console.log(`✅ Weekly backup saved: ${fileName}`);
 }
 
-async function handleOneTimeBackup(req, res) {
-  const { accessToken, playlistId } = req.body;
-
-  if (!accessToken || !playlistId) {
-    return res.status(400).json({ error: "Missing accessToken or playlistId" });
+async function handleOneTimeBackup({ accessToken, supabaseUser, playlistId }) {
+  if (!accessToken || !playlistId || !supabaseUser) {
+    throw new Error("Missing authentication or playlistId in service");
   }
 
   try {
-    const tracks = await fetchPlaylistTracks(accessToken, playlistId);
-    const fileName = `${playlistId}_one_time_backup_${Date.now()}.csv`;
-    const filePath = path.join(BACKUP_DIR, fileName);
+    const tracks = await spotifyService.getPlaylistTracks(
+      //good up to here -> we retrieved playlist tracks successfully
+      accessToken,
+      playlistId
+    );
+
+    const csv = tracksToCsv(tracks);
+    return csv;
   } catch (error) {
-    console.error("Error during one-time backup:", error);
-    return res.status(500).json({ error: "Failed to perform one-time backup" });
+    throw new Error("Failed to generate one-time backup: " + error.message);
   }
 }
 

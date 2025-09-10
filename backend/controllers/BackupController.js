@@ -29,18 +29,30 @@ async function enableWeeklyBackup(req, res) {
 
 async function oneTimeBackup(req, res) {
   console.log("One-time backup endpoint hit");
+  const accessToken = req.spotifyAccessToken;
+  const playlistId = req.params.playlistId;
+  const supabaseUser = req.supabaseUser;
+  if (!supabaseUser || !accessToken) {
+    console.log("Missing supabaseUser or spotifyTokens in route handler");
+    throw new Error("Authentication error");
+  }
   try {
-    const { playlistId } = req.body;
-    const accessToken = req.headers.authorization?.split(" ")[1];
-
-    if (!playlistId || !accessToken) {
+    //check playlst id
+    if (!playlistId) {
       return res
         .status(400)
-        .json({ error: "Missing playlistId or accessToken" });
+        .json({ error: "Missing playlistId parameter in backend" });
     }
 
-    const result = await handleOneTimeBackup({ accessToken, playlistId });
-    return res.json(result);
+    const csv = await handleOneTimeBackup({
+      accessToken,
+      supabaseUser,
+      playlistId,
+    });
+
+    res.setHeader("Content-Disposition", "attachment; filename=playlist.csv");
+    res.setHeader("Content-Type", "text/csv");
+    res.send(csv);
   } catch (error) {
     console.error("Weekly backup error:", error);
     res.status(500).json({ error: "Failed to run weekly backup" });

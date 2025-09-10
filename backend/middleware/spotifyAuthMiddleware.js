@@ -26,6 +26,7 @@ module.exports = async function spotifyAuthMiddleware(req, res, next) {
 
   console.log("access_token before refresh:", access_token);
 
+  // Check if access token is expired
   if (new Date() >= new Date(expires_at)) {
     console.log("Access token expired, refreshing...");
     // Refresh the access token

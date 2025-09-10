@@ -1,33 +1,25 @@
 // /src/utils/csv.js
 
-export const convertTracksToCSV = (tracks) => {
-  const headers = ["#", "Track Name", "Artists", "Album", "Spotify URL"];
-  const rows = tracks.map((item, index) => {
-    const track = item.track;
-    const artists = track.artists.map((a) => a.name).join(", ");
-    return [
-      index + 1,
-      track.name,
-      artists,
-      track.album.name,
-      track.external_urls.spotify,
-    ];
-  });
+function getFileName(playlistName) {
+  if (!playlistName) {
+    throw new Error("Playlist name is required to generate file name");
+  }
 
-  const csv = [headers, ...rows]
-    .map((row) => row.map((cell) => `"${cell}"`).join(","))
-    .join("\n");
+  try {
+    const timestamp = getFileTimeStamp(playlistName);
+    return `${playlistName}_${timestamp}.csv`;
+  } catch (error) {
+    console.error("Error generating file name:", error);
+    return "playlist_backup.csv";
+  }
+}
 
-  return csv;
-};
+function getFileTimeStamp() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}${month}${day}`;
+}
 
-export const downloadCSV = (csvData, filename = "playlist.csv") => {
-  const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.setAttribute("download", filename);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
+module.exports = { getFileName };

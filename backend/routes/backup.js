@@ -5,11 +5,17 @@ const {
   oneTimeBackup,
 } = require("../controllers/BackupController");
 const authMiddleware = require("../middleware/authMiddleware");
+const spotifyAuthMiddleware = require("../middleware/spotifyAuthMiddleware");
 
 // POST /api/backup/weekly
 router.post("/weekly", authMiddleware, enableWeeklyBackup);
 
-// POST /api/backup/single
-router.post("/single", authMiddleware, oneTimeBackup);
+// POST /api/backup/single/id
+router.post(
+  "/single/:playlistId",
+  authMiddleware,
+  spotifyAuthMiddleware,
+  oneTimeBackup
+);
 
 module.exports = router;

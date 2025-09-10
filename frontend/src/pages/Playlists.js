@@ -68,31 +68,31 @@ const Playlists = () => {
     if (page > 0) setPage(page - 1);
   };
 
-  const handleBackup = async (playlistId, playlistName) => {
-    try {
-      let allTracks = [];
-      let offset = 0;
-      const limit = 100;
+  // const handleBackup = async (playlistId, playlistName) => {
+  //   try {
+  //     let allTracks = [];
+  //     let offset = 0;
+  //     const limit = 100;
 
-      while (true) {
-        const data = await backupPlaylist(
-          // accessToken,
-          playlistId,
-          limit,
-          offset
-        );
+  //     while (true) {
+  //       const data = await backupPlaylist(
+  //         // accessToken,
+  //         playlistId,
+  //         limit,
+  //         offset
+  //       );
 
-        allTracks = [...allTracks, ...data.items];
-        if (data.items.length < limit) break;
-        offset += limit;
-      }
+  //       allTracks = [...allTracks, ...data.items];
+  //       if (data.items.length < limit) break;
+  //       offset += limit;
+  //     }
 
-      const csv = convertTracksToCSV(allTracks);
-      downloadCSV(csv, `${playlistName}.csv`);
-    } catch (error) {
-      console.error("Backup error:", error);
-    }
-  };
+  //     const csv = convertTracksToCSV(allTracks);
+  //     downloadCSV(csv, `${playlistName}.csv`);
+  //   } catch (error) {
+  //     console.error("Backup error:", error);
+  //   }
+  // };
 
   const handleWeeklyBackup = async (playlistId, playlistName) => {
     try {
@@ -133,7 +133,7 @@ const Playlists = () => {
               </p>
               <button
                 id="backup-button"
-                onClick={() => handleBackup(playlist.id, playlist.name)}
+                onClick={() => backupPlaylist(playlist.id, playlist.name)}
                 className="ml-auto px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
               >
                 One-time Backup

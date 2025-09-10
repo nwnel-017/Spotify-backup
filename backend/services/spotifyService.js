@@ -150,7 +150,7 @@ async function storeTokens(userId, accessToken, refreshToken, expiresIn) {
   return data;
 }
 
-async function getPlaylistTracks(playlistId, accessToken) {
+async function getPlaylistTracks(accessToken, playlistId) {
   try {
     const response = await axios.get(
       `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
@@ -158,7 +158,14 @@ async function getPlaylistTracks(playlistId, accessToken) {
         headers: { Authorization: `Bearer ${accessToken}` },
       }
     );
-    return response.data;
+    const items = response.data.items.map((item) => ({
+      name: item.track.name,
+      artist: item.track.artists.map((a) => a.name).join(", "),
+      album: item.track.album.name,
+      added_at: item.added_at,
+    }));
+
+    return items;
   } catch (error) {
     throw {
       status: error.response?.status || 500,
@@ -175,7 +182,6 @@ async function getPlaylists(accessToken) {
         headers: { Authorization: `Bearer ${accessToken}` },
       }
     );
-    console.log("Response from Spotify API getPlaylists:", response.data);
     return response.data;
   } catch (error) {
     console.error("Spotify API error:", error.response?.data || error.message);
