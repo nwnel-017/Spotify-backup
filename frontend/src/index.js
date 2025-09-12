@@ -6,6 +6,7 @@ import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import { AuthProvider } from "./context/AuthContext"; // ✅ import AuthProvider
 import { Toaster } from "react-hot-toast"; // ✅ add this
+import "./icons"; // just import it once to register icons globally
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(

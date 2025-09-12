@@ -5,6 +5,8 @@ import {
   linkSpotifyAccount,
 } from "../services/SpotifyService";
 import { useAuth } from "../context/AuthContext";
+import "../App.css";
+import styles from "./styles/Home.module.css";
 
 const Home = () => {
   const [profile, setProfile] = useState(null);
@@ -63,31 +65,27 @@ const Home = () => {
   }
 
   return (
-    <div className="p-10">
-      <h1 className="text-2xl font-bold">Welcome to the Home Page</h1>
-      {profile && (
-        <div className="mt-4">
-          <div>
-            <strong>Username:</strong> {profile.display_name}
-          </div>
-          <div>
-            <strong>Followers:</strong> {profile.followers?.total}
-          </div>
-          <div>
-            <strong>Email:</strong> {profile.email}
-          </div>
-          {profile.images?.length > 0 && (
-            <img
-              src={profile.images[0].url}
-              alt="Profile"
-              className="mt-4 rounded-full w-32 h-32 object-cover"
-            />
-          )}
-          <div>
-            <Playlists />
-          </div>
-        </div>
-      )}
+    <div className={styles.dashboard}>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+      ></link>
+      <h1 className={styles.headerText}>Home</h1>
+      {/* Profile */}
+      <header className={styles.header}>
+        <img
+          src={
+            (profile?.images.length > 0 && profile.images[0].url) ||
+            "default-avatar.png"
+          }
+          alt="Profile"
+          className={styles.profileImage}
+        ></img>
+        <h1 className={styles.headerText}>{profile?.display_name}</h1>
+      </header>
+      <div>
+        <Playlists />
+      </div>
     </div>
   );
 };

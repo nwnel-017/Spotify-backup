@@ -1,18 +1,7 @@
 const cron = require("node-cron");
 const { handleWeeklyBackup } = require("../services/backupService.js");
 
-const activeJobs = new Map(); // key: playlistId, value: cron task
-
-// Example playlists to backup
-const playlists = [
-  {
-    userId: "example_user",
-    playlistId: "your-playlist-id",
-    playlistName: "Your Playlist Name",
-    accessToken: process.env.SPOTIFY_ACCESS_TOKEN, // ensure you have a valid token
-  },
-  // Add more playlists here if needed
-];
+const activeJobs = new Map(); // cron task
 
 async function scheduleBackup(config) {
   const { playlistId } = config;
@@ -20,6 +9,14 @@ async function scheduleBackup(config) {
   if (activeJobs.has(playlistId)) {
     console.log(`Weekly backup already scheduled for playlist ${playlistId}`);
     return;
+  }
+
+  // running initial backup
+  try {
+    await handleWeeklyBackup(config);
+    console.log("✅ Initial backup completed");
+  } catch (err) {
+    console.error("❌ Initial backup failed", err);
   }
 
   // Run every Monday at 9 AM

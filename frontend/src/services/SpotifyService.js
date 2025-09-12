@@ -103,12 +103,10 @@ export async function backupPlaylist(playlistId, playlistName) {
   }
 }
 
-export async function triggerWeeklyBackup(
-  accessToken,
-  playlistId,
-  playlistName
-) {
-  if (!accessToken || !playlistId || !playlistName) {
+export async function triggerWeeklyBackup(playlistId, playlistName) {
+  const session = await supabase.auth.getSession();
+  const accessToken = session.data.session.access_token;
+  if (!accessToken || !playlistId) {
     throw new Error("Missing required parameters for weekly backup");
   }
   console.log("calling weekly backup API"); // successfully reached
@@ -123,7 +121,7 @@ export async function triggerWeeklyBackup(
     }
   );
 
-  if (!res.ok) {
+  if (res.status !== 200) {
     throw new Error(`Failed to trigger weekly backup: ${res.status}`);
   }
 

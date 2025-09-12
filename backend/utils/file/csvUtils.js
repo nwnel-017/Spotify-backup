@@ -5,10 +5,18 @@ function tracksToCsv(tracks) {
     throw new Error("No tracks available to convert to CSV");
   }
   try {
-    const fields = ["track.name", "track.artists[0].name", "track.album.name"];
+    // Adjust fields to match the flat structure of the tracks array
+    const fields = [
+      { label: "Track Name", value: "name" },
+      { label: "Artist", value: "artist" },
+      { label: "Album", value: "album" },
+      { label: "Added At", value: "added_at" },
+    ];
+
     const opts = { fields };
     const parser = new Parser(opts);
-    return parser.parse(tracks);
+    const csv = parser.parse(tracks);
+    return csv;
   } catch (err) {
     console.error("Error converting tracks to CSV:", err);
     throw err;

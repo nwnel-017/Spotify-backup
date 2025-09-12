@@ -9,7 +9,7 @@ const { access } = require("fs");
 // verify both tokens exist
 // attach spotify tokens and supabase user info to req object
 module.exports = async function spotifyAuthMiddleware(req, res, next) {
-  const userId = req.supabaseUser.sub;
+  const userId = req.supabaseUser;
 
   // Lookup Spotify tokens
   const { data, error } = await supabase

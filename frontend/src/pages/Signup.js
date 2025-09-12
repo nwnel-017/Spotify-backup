@@ -25,10 +25,12 @@ const SignupPage = () => {
     });
 
     if (error) {
-      toast.error("Error creating account");
+      // toast.error("Error creating account");
+      console.log("Error signing up:", error.message);
       return;
     } else {
-      toast.success("Verification email sent! Please check your inbox.");
+      // toast.success("Verification email sent! Please check your inbox.");
+      console.log("Verification email sent! Please check your inbox.");
     }
     setVerificationSent(true);
     console.log("Signup successful:", data);

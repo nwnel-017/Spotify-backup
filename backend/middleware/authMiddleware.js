@@ -19,8 +19,7 @@ module.exports = async function (req, res, next) {
     } catch (err) {
       return res.status(401).json({ error: "JWT expired or invalid" });
     }
-
-    req.supabaseUser = decoded; // contains `sub`, `email`, etc.
+    req.supabaseUser = decoded.sub; // contains `sub`, `email`, etc.
 
     next();
   } catch (error) {

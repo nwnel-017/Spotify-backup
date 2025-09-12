@@ -6,19 +6,24 @@ const {
 const { scheduleBackup } = require("../jobs/weeklyBackup.js");
 
 async function enableWeeklyBackup(req, res) {
-  const { userId, playlistId, playlistName, accessToken } = req.body;
+  console.log("Enable weekly backup endpoint hit"); //reached
 
-  if (!userId || !playlistId || !playlistName || !accessToken) {
-    return res.status(400).json({ error: "Missing required fields" });
+  const { playlistId, playlistName } = req.body;
+  const { supabaseUser, spotifyAccessToken } = req;
+
+  console.log("Request body:", req.body); // weve only got playlistId
+
+  if (!playlistId || !supabaseUser || !spotifyAccessToken) {
+    throw new Error("Missing required parameters in request body");
   }
 
-  console.log(
-    "reached enableWeeklyBackup endpoint in backupController. Attempting to call backupService"
-  );
-
   try {
-    // Schedule the weekly backup for this playlist
-    scheduleBackup({ userId, playlistId, playlistName, accessToken });
+    await scheduleBackup({
+      supabaseUser,
+      spotifyAccessToken,
+      playlistId,
+      playlistName,
+    });
 
     return res.json({ message: "Weekly backup enabled for this playlist" });
   } catch (err) {
