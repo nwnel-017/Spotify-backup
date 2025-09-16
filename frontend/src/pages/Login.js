@@ -31,8 +31,6 @@ const LoginPage = () => {
       // You can now redirect or fetch user data
       navigate("/home");
     }
-
-    // window.location.href = `${process.env.REACT_APP_API_BASE_URL}/auth/login`; //this is when we use spotify OAuth 2.0
   };
 
   const handleSignUp = () => {

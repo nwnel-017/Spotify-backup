@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Playlists from "./Playlists";
+import Popup from "../components/Popup";
 import {
   getSpotifyProfile,
   linkSpotifyAccount,

@@ -108,3 +108,57 @@
 .downloadIcon:hover {
   transform: scale(1.2);
 }
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  border: 2px solid blue;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 1000;
+}
+
+.overlay.active {
+  visibility: visible;
+  opacity: 1;
+}
+
+.popup {
+  background: var(--spotify-lightgray);
+  width: 100vw;
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  transform: scale(0);
+  opacity: 0;
+  transition: transform 0.3s ease opacity 0.3s ease;
+}
+
+.overlay.active .popup {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.downloadOptions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.backupOption {
+  width: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}

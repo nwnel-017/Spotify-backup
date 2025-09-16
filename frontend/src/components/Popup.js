@@ -1,0 +1,47 @@
+import styles from "../pages/styles/Home.module.css";
+import { faArrowDown } from "@fortawesome/free-solid-svg-icons";
+import { faArrowRotateRight } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  backupPlaylist,
+  triggerWeeklyBackup,
+} from "../services/SpotifyService";
+
+// To Do: move trigger weekly backup and one time backup functionality to this page
+const Popup = ({ playlist, show, onClose }) => {
+  let playlistId, playlistName;
+  if (playlist) {
+    playlistId = playlist[0];
+    playlistName = playlist[1];
+  }
+  console.log("playlist id: " + playlistId);
+  console.log("playlist name: " + playlistName);
+  return (
+    <div
+      className={`${styles.overlay} ${show ? styles.active : ""}`}
+      onClick={onClose}
+    >
+      <div className={styles.popup}>
+        <h2>I would like to:</h2>
+        <div className={styles.downloadOptions}>
+          <div
+            className={styles.backupOption}
+            onClick={() => backupPlaylist(playlistId, playlistName)}
+          >
+            <FontAwesomeIcon icon={faArrowDown} className={styles.backupIcon} />
+            <span>Save playlist as a CSV file</span>
+          </div>
+          <div
+            className={styles.backupOption}
+            onClick={() => triggerWeeklyBackup(playlistId, playlistName)}
+          >
+            <FontAwesomeIcon icon={faArrowRotateRight} />
+            Keep my playlist secure with a weekly backup
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Popup;
