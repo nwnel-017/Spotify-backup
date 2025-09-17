@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { SignupPage } from "./Signup";
 import { supabase } from "../supabase/supabaseClient";
 import { useNavigate } from "react-router-dom";
+import styles from "./styles/Home.module.css";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSpotify } from "@fortawesome/free-brands-svg-icons";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -37,31 +40,35 @@ const LoginPage = () => {
     window.location.href = `${process.env.REACT_APP_CLIENT_URL}/`;
   };
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
-      <h1 className="text-3xl font-bold mb-6">Welcome to My Spotify App 🎵</h1>
-      <form onSubmit={handleLogin} className="w-full max-w-sm mt-6">
-        <h1 className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-lg shadow-md">
-          Login To Your Account
-        </h1>
+    <div className={`${styles.dashboard} ${styles.loginPage}`}>
+      <h1>Login</h1>
+      <form onSubmit={handleLogin} className={styles.loginForm}>
         <input
+          className={styles.formInput}
           type="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-        />
-
+        ></input>
         <input
+          className={styles.formInput}
           type="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-        />
+        ></input>
       </form>
-      <button
-        onClick={handleLogin}
-        className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-lg shadow-md"
-      >
+      <button onClick={handleLogin} className={styles.submitButton}>
         Login
+      </button>
+      <div className={styles.dividerContainer}>
+        <hr className={styles.divider} />
+        <p>or</p>
+        <hr className={styles.divider} />
+      </div>
+      <button className={`${styles.secondaryBtn} ${styles.spotifyLogin}`}>
+        <FontAwesomeIcon icon={faSpotify} />
+        Login with Spotify
       </button>
     </div>
   );
