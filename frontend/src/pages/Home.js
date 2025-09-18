@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Playlists from "./Playlists";
-import Popup from "../components/Popup";
+import Sidebar from "../components/Sidebar";
 import {
   getSpotifyProfile,
   linkSpotifyAccount,
@@ -13,12 +13,18 @@ const Home = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [accountNotLinked, setAccountNotLinked] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // To Do: implement logout to refresh supabase JWT
   // if that fails, log out user
   const handleUnauthorized = () => {
     console.log("User is not logged in. Redirecting to login page.");
     //logout();
+  };
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+    console.log("setSidebar = " + sidebarOpen);
   };
 
   useEffect(() => {
@@ -42,10 +48,13 @@ const Home = () => {
     };
 
     fetchProfile();
+  }, []);
+
+  useEffect(() => {
     if (profile) {
       setAccountNotLinked(false);
     }
-  }, []);
+  }, [profile]);
 
   if (loading) {
     return <p className="text-gray-500 mt-4">Loading profile...</p>;
@@ -67,12 +76,25 @@ const Home = () => {
 
   return (
     <div className={styles.dashboard}>
-      <link
+      {/* <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
         rel="stylesheet"
-      ></link>
-      <h1 className={styles.headerText}>Home</h1>
+      ></link> */}
+      {/* <h1 className={styles.headerText}>Home</h1> */}
       {/* Profile */}
+      <header className={styles.header}>
+        <button onClick={() => toggleSidebar()} className={styles.menuIcon}>
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </header>
+
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(!sidebarOpen)}
+      />
+
       <header className={styles.header}>
         <img
           src={
