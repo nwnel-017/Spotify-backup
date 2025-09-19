@@ -1,15 +1,34 @@
 import styles from "../pages/styles/Home.module.css";
+import { faXmark } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../supabase/supabaseClient";
 
 const Sidebar = ({ isOpen, onClose }) => {
+  const navigate = useNavigate();
+
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      throw new error("Error ending user session: " + error);
+    }
+    navigate("/login");
+  };
+
   return (
     <div className={`${styles.sidebar} ${isOpen ? styles.open : ""}`}>
-      <button className={styles.closeButton} onClick={() => onClose()}>
-        close
-      </button>
       <ul className={styles.sidebarMenu}>
-        <li>Home</li>
+        <li>
+          <FontAwesomeIcon
+            icon={faXmark}
+            className={styles.exitIcon}
+            onClick={() => onClose()}
+          />
+        </li>
+        <li onClick={() => onClose()}>Home</li>
         <li>Restore a Playlist</li>
-        <li>Logout</li>
+        <li onClick={() => logout()}>Logout</li>
       </ul>
     </div>
   );

@@ -1,3 +1,5 @@
+import { useContext } from "react";
+import { LoadingContext } from "../context/LoadingContext";
 import styles from "../pages/styles/Home.module.css";
 import { faArrowDown } from "@fortawesome/free-solid-svg-icons";
 import { faArrowRotateRight } from "@fortawesome/free-solid-svg-icons";
@@ -9,7 +11,31 @@ import {
 
 // To Do: move trigger weekly backup and one time backup functionality to this page
 const Popup = ({ playlist, show, onClose }) => {
+  const { setLoading } = useContext(LoadingContext);
   let playlistId, playlistName;
+
+  const handleBackup = (playlistId, playlistName) => {
+    setLoading(true);
+    try {
+      backupPlaylist(playlistId, playlistName);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleWeeklyBackup = (playlistId, playlistName) => {
+    setLoading(true);
+    try {
+      triggerWeeklyBackup(playlistId, playlistName);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (playlist) {
     playlistId = playlist[0];
     playlistName = playlist[1];
@@ -26,14 +52,14 @@ const Popup = ({ playlist, show, onClose }) => {
         <div className={styles.downloadOptions}>
           <div
             className={styles.backupOption}
-            onClick={() => backupPlaylist(playlistId, playlistName)}
+            onClick={() => handleBackup(playlistId, playlistName)}
           >
             <FontAwesomeIcon icon={faArrowDown} className={styles.backupIcon} />
             <span>Save playlist as a CSV file</span>
           </div>
           <div
             className={styles.backupOption}
-            onClick={() => triggerWeeklyBackup(playlistId, playlistName)}
+            onClick={() => handleWeeklyBackup(playlistId, playlistName)}
           >
             <FontAwesomeIcon icon={faArrowRotateRight} />
             Keep my playlist secure with a weekly backup

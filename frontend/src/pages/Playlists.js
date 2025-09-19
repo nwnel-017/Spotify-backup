@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import {
   fetchUserPlaylists,
   backupPlaylist,
@@ -6,13 +6,15 @@ import {
 } from "../services/SpotifyService";
 import styles from "./styles/Home.module.css";
 import Popup from "../components/Popup";
+import { LoadingContext } from "../context/LoadingContext";
 import { faArrowDown } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 const Playlists = () => {
   const [allPlaylists, setAllPlaylists] = useState([]);
   const [filteredPlaylists, setFilteredPlaylists] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
+  const { setLoading } = useContext(LoadingContext);
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(0);
   const [showPopup, setShowPopup] = useState(false);
@@ -22,11 +24,8 @@ const Playlists = () => {
 
   useEffect(() => {
     const fetchPlaylists = async () => {
-      setLoading(true);
-      console.log("fetching playlists");
-
       let offset = 0;
-
+      setLoading(true);
       try {
         const firstPage = await fetchUserPlaylists(offset, 50); // retrieve the first page
         const total = firstPage.total || 0; // total number of playlists for the profile
@@ -91,7 +90,7 @@ const Playlists = () => {
     setSelectedPlaylist(null);
   };
 
-  if (loading) return <p>Loading playlists...</p>;
+  // if (loading) return <p>Loading playlists...</p>;
 
   return (
     <section className={styles.playlistsSection}>

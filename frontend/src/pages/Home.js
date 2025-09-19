@@ -1,17 +1,21 @@
-import React, { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { LoadingContext } from "../context/LoadingContext";
 import Playlists from "./Playlists";
 import Sidebar from "../components/Sidebar";
 import {
   getSpotifyProfile,
   linkSpotifyAccount,
 } from "../services/SpotifyService";
+import { supabase } from "../supabase/supabaseClient";
 import { useAuth } from "../context/AuthContext";
 import "../App.css";
 import styles from "./styles/Home.module.css";
 
 const Home = () => {
+  const { navigate } = useNavigate();
   const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { loading, setLoading } = useContext(LoadingContext);
   const [accountNotLinked, setAccountNotLinked] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -22,6 +26,15 @@ const Home = () => {
     //logout();
   };
 
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      throw new error("Error ending user session: " + error);
+    }
+    navigate("/login");
+  };
+
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
     console.log("setSidebar = " + sidebarOpen);
@@ -29,6 +42,7 @@ const Home = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
+      setLoading(true);
       try {
         const data = await getSpotifyProfile();
         setProfile(data);
@@ -56,10 +70,6 @@ const Home = () => {
     }
   }, [profile]);
 
-  if (loading) {
-    return <p className="text-gray-500 mt-4">Loading profile...</p>;
-  }
-
   if (accountNotLinked) {
     return (
       <div className="mt-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
@@ -73,14 +83,13 @@ const Home = () => {
       </div>
     );
   }
-
   return (
     <div className={styles.dashboard}>
-      {/* <link
+      <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
         rel="stylesheet"
-      ></link> */}
-      {/* <h1 className={styles.headerText}>Home</h1> */}
+      ></link>
+      {/* <h1 className={styles.headerText}>Home</h1>
       {/* Profile */}
       <header className={styles.header}>
         <button onClick={() => toggleSidebar()} className={styles.menuIcon}>
@@ -89,12 +98,10 @@ const Home = () => {
           <span></span>
         </button>
       </header>
-
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(!sidebarOpen)}
       />
-
       <header className={styles.header}>
         <img
           src={
