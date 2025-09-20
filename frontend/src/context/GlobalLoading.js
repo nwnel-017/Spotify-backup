@@ -2,16 +2,26 @@ import { useContext } from "react";
 import { LoadingContext } from "./LoadingContext";
 import styles from "../pages/styles/Home.module.css";
 import { Player } from "@lottiefiles/react-lottie-player";
+import { useLoading } from "./LoadingContext";
 
 const GlobalLoading = () => {
-  const { loading } = useContext(LoadingContext);
+  const { active, type } = useLoading();
 
-  if (!loading) {
-    return null;
-  }
+  if (!active) return null;
 
   return (
-    <div className={styles.loadingContext}>
+    // <div
+    //   // className={`${styles.loadingContext} ${
+    //   //   loading.type === "page"
+    //   //     ? styles.fullPageLoader
+    //   //     : styles.transparentLoader
+    //   // }`}
+    // >
+    <div
+      className={`${styles.loadingContext} ${
+        type === "page" ? styles.fullPageLoader : styles.transparentLoader
+      }`}
+    >
       <Player
         autoplay
         loop

@@ -33,7 +33,6 @@ export const linkSpotifyAccount = async () => {
   if (!token) {
     throw new Error("User is not authenticated");
   }
-
   // Call backend to get Spotify auth URL
   const res = await fetch(
     `${process.env.REACT_APP_API_BASE_URL}/auth/linkAccount`,

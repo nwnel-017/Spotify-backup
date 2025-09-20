@@ -7,48 +7,103 @@ import {
 import styles from "./styles/Home.module.css";
 import Popup from "../components/Popup";
 import { LoadingContext } from "../context/LoadingContext";
+import { useLoading } from "../context/LoadingContext";
 import { faArrowDown } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
-const Playlists = () => {
+const Playlists = ({ stopParentLoader }) => {
   const [allPlaylists, setAllPlaylists] = useState([]);
   const [filteredPlaylists, setFilteredPlaylists] = useState([]);
-  // const [loading, setLoading] = useState(true);
-  const { setLoading } = useContext(LoadingContext);
+  const { startLoading, stopLoading } = useLoading();
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(0);
   const [showPopup, setShowPopup] = useState(false);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
 
-  const limit = 5;
+  const pageLimit = 5;
+  // amount of playlists to retrieve per request
+  const apiLimit = 50;
+
+  // Retry-aware API call with rate-limit logging
+  const fetchPlaylistsWithRetry = async (offset, limit, retries = 3) => {
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        const response = await fetchUserPlaylists(offset, limit);
+
+        // If response.status exists, check for 429
+        if (response.status === 429) {
+          const retryAfter = parseInt(
+            response.headers.get("Retry-After") || "1",
+            10
+          );
+          console.warn(
+            `Rate limit hit at offset ${offset}. Retrying in ${retryAfter}s (attempt ${
+              attempt + 1
+            })`
+          );
+          await new Promise((resolve) =>
+            setTimeout(resolve, retryAfter * 1000)
+          );
+          continue; // retry
+        }
+
+        return response; // success
+      } catch (error) {
+        console.error(`Error fetching offset ${offset}:`, error);
+      }
+    }
+    throw new Error(
+      `Failed to fetch playlists at offset ${offset} after ${retries} retries`
+    );
+  };
+
+  // To get all playlists quickly while ensuring we retrieve correct playlists
+  const fetchAllPlaylists = async (limit = 50) => {
+    let all = [];
+
+    // Retrieve first page -> get total playlist count from response.total
+    // const firstPage = await fetchUserPlaylists(0, apiLimit);
+    const firstPage = await fetchPlaylistsWithRetry(0, apiLimit);
+
+    all = firstPage.items || []; // set to first page -> 50 items
+    const total = firstPage.total || 0;
+
+    // Prepare batches of offsets to run in parallel
+    const batchSize = 5; // number of pages to fetch in parallel per batch
+    let offsets = [];
+    for (let offset = apiLimit; offset < total; offset += apiLimit) {
+      offsets.push(offset);
+    }
+
+    // Process batches sequentially to avoid rate limits
+    for (let i = 0; i < offsets.length; i += batchSize) {
+      const batchOffsets = offsets.slice(i, i + batchSize);
+      const pages = await Promise.all(
+        // batchOffsets.map((offset) => fetchUserPlaylists(offset, apiLimit))
+        batchOffsets.map((offset) => fetchPlaylistsWithRetry(offset, apiLimit))
+      );
+      all = all.concat(pages.flatMap((p) => p.items || []));
+    }
+
+    // Removing duplicates
+    const unique = Array.from(new Map(all.map((p) => [p.id, p])).values());
+
+    return unique; // array of unique playlists
+  };
 
   useEffect(() => {
     const fetchPlaylists = async () => {
-      let offset = 0;
-      setLoading(true);
+      startLoading("page");
       try {
-        const firstPage = await fetchUserPlaylists(offset, 50); // retrieve the first page
-        const total = firstPage.total || 0; // total number of playlists for the profile
-        console.log("Your total amount of playlists: " + total);
-
-        const requests = []; // holds all of the requests to run in parallel
-        for (let offset = 50; offset < total; offset += 50) {
-          requests.push(fetchUserPlaylists(offset, 50));
-        }
-
-        const pages = await Promise.all(requests);
-
-        const all = [
-          ...(firstPage.items || []),
-          ...pages.flatMap((p) => p.items || []),
-        ];
-
-        setAllPlaylists(all);
-        setFilteredPlaylists(all);
+        const playlists = await fetchAllPlaylists();
+        setAllPlaylists(playlists);
+        setFilteredPlaylists(playlists);
       } catch (error) {
         console.error("Error fetching playlists", error);
       } finally {
-        setLoading(false);
+        // setLoading({ active: false, type: null }); // turn off solid loader
+        stopLoading("page");
+        stopParentLoader?.(); // notify Home loader to stop
       }
     };
 
@@ -64,13 +119,13 @@ const Playlists = () => {
     setPage(0); // Reset to first page on search
   }, [searchQuery, allPlaylists]);
 
-  const paginatedPlaylists = filteredPlaylists.slice(
-    page * limit,
-    page * limit + limit
+  const paginatedPlaylists = (filteredPlaylists || []).slice(
+    page * pageLimit,
+    page * pageLimit + pageLimit
   );
 
   const nextPage = () => {
-    if ((page + 1) * limit < filteredPlaylists.length) setPage(page + 1);
+    if ((page + 1) * pageLimit < filteredPlaylists.length) setPage(page + 1);
   };
 
   const prevPage = () => {
@@ -90,12 +145,10 @@ const Playlists = () => {
     setSelectedPlaylist(null);
   };
 
-  // if (loading) return <p>Loading playlists...</p>;
-
   return (
     <section className={styles.playlistsSection}>
       <div className={styles.playlistsHeader}>
-        <h5>Your Playlists</h5>
+        <h5>Playlists</h5>
         <input
           type="text"
           placeholder="Search playlists..."
@@ -103,7 +156,6 @@ const Playlists = () => {
           onChange={(e) => setSearchQuery(e.target.value)}
         ></input>
       </div>
-
       <ul className={styles.playlistList}>
         {paginatedPlaylists.length > 0 ? (
           paginatedPlaylists.map((playlist) => (
@@ -126,13 +178,13 @@ const Playlists = () => {
         )}
       </ul>
       <section className={styles.pagination}>
-        <button
-          onClick={nextPage}
-          disabled={(page + 1) * limit >= filteredPlaylists.length}
-        >
+        <button onClick={prevPage} disabled={page === 0}>
           &lt;
         </button>
-        <button onClick={prevPage} disabled={page == 0}>
+        <button
+          onClick={nextPage}
+          disabled={(page + 1) * pageLimit >= filteredPlaylists.length}
+        >
           &gt;
         </button>
       </section>

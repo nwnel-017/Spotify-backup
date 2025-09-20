@@ -174,14 +174,21 @@ async function getPlaylistTracks(accessToken, playlistId) {
   }
 }
 
-async function getPlaylists(accessToken) {
+async function getPlaylists(accessToken, offset = 0, limit = 50) {
   try {
     const response = await axios.get(
       "https://api.spotify.com/v1/me/playlists",
       {
         headers: { Authorization: `Bearer ${accessToken}` },
+        params: { offset, limit },
       }
     );
+
+    // testing - check if we've hit spotify's rate limits
+    if (response.status === 429) {
+      console.log("Hit spotifys rate limits!!!!");
+    }
+
     return response.data;
   } catch (error) {
     console.error("Spotify API error:", error.response?.data || error.message);

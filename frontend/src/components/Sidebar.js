@@ -27,7 +27,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           />
         </li>
         <li onClick={() => onClose()}>Home</li>
-        <li>Restore a Playlist</li>
+        <li onClick={() => navigate("/restore")}>Restore a Playlist</li>
         <li onClick={() => logout()}>Logout</li>
       </ul>
     </div>

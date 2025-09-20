@@ -11,28 +11,28 @@ import {
 
 // To Do: move trigger weekly backup and one time backup functionality to this page
 const Popup = ({ playlist, show, onClose }) => {
-  const { setLoading } = useContext(LoadingContext);
+  const { startLoading, stopLoading } = useContext(LoadingContext);
   let playlistId, playlistName;
 
-  const handleBackup = (playlistId, playlistName) => {
-    setLoading(true);
+  const handleBackup = async (playlistId, playlistName) => {
+    startLoading("overlay");
     try {
-      backupPlaylist(playlistId, playlistName);
+      await backupPlaylist(playlistId, playlistName);
     } catch (error) {
       console.log(error);
     } finally {
-      setLoading(false);
+      stopLoading("overlay");
     }
   };
 
-  const handleWeeklyBackup = (playlistId, playlistName) => {
-    setLoading(true);
+  const handleWeeklyBackup = async (playlistId, playlistName) => {
+    startLoading("overlay");
     try {
-      triggerWeeklyBackup(playlistId, playlistName);
+      await triggerWeeklyBackup(playlistId, playlistName);
     } catch (error) {
       console.log(error);
     } finally {
-      setLoading(false);
+      stopLoading("overlay");
     }
   };
 
@@ -40,8 +40,7 @@ const Popup = ({ playlist, show, onClose }) => {
     playlistId = playlist[0];
     playlistName = playlist[1];
   }
-  console.log("playlist id: " + playlistId);
-  console.log("playlist name: " + playlistName);
+
   return (
     <div
       className={`${styles.overlay} ${show ? styles.active : ""}`}

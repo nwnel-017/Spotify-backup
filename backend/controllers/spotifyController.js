@@ -91,8 +91,14 @@ exports.getPlaylists = async (req, res) => {
     return res.status(401).json({ error: "Missing access token" });
   }
 
+  const { offset = 0, limit = 50 } = req.query;
+
   try {
-    const response = await spotifyService.getPlaylists(spotifyToken);
+    const response = await spotifyService.getPlaylists(
+      spotifyToken,
+      parseInt(offset, 10),
+      parseInt(limit, 10)
+    );
     res.json(response);
   } catch (error) {
     console.error("Error fetching playlists", error.response.data);

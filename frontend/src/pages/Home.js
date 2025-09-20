@@ -15,15 +15,16 @@ import styles from "./styles/Home.module.css";
 const Home = () => {
   const { navigate } = useNavigate();
   const [profile, setProfile] = useState(null);
-  const { loading, setLoading } = useContext(LoadingContext);
+  const { startLoading, stopLoading } = useContext(LoadingContext);
   const [accountNotLinked, setAccountNotLinked] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // To Do: implement logout to refresh supabase JWT
   // if that fails, log out user
+  // right now -> everytime the page is refreshed our user is logged out
   const handleUnauthorized = () => {
     console.log("User is not logged in. Redirecting to login page.");
-    //logout();
+    // logout();
   };
 
   const logout = async () => {
@@ -42,7 +43,8 @@ const Home = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      setLoading(true);
+      // setLoading({ active: true, type: "page" }); // solid loader
+      startLoading("page");
       try {
         const data = await getSpotifyProfile();
         setProfile(data);
@@ -57,7 +59,7 @@ const Home = () => {
           setAccountNotLinked(true);
         }
       } finally {
-        setLoading(false);
+        stopLoading("page");
       }
     };
 
@@ -114,7 +116,7 @@ const Home = () => {
         <h1 className={styles.headerText}>{profile?.display_name}</h1>
       </header>
       <div>
-        <Playlists />
+        <Playlists profileLoaded={!!profile} stopParentLoader={stopLoading} />
       </div>
     </div>
   );

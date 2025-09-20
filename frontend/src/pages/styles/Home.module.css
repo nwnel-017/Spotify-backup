@@ -372,13 +372,21 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
   color: white;
   font-size: 1rem;
   z-index: 9999;
+}
+
+.fullPageLoader {
+  /* background-color: var(--background-color); */
+  background-color: black;
+}
+
+.transparentLoader {
+  background-color: rgba(0, 0, 0, 0.5);
 }
 
 .loadingAnimation {

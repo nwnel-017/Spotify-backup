@@ -26,6 +26,7 @@ async function fetchPlaylistTracks(accessToken, playlistId) {
     const data = res.data;
     tracks.push(
       ...data.items.map((item) => ({
+        id: item.track.id,
         name: item.track.name,
         artist: item.track.artists.map((a) => a.name).join(", "),
         album: item.track.album.name,
@@ -37,10 +38,6 @@ async function fetchPlaylistTracks(accessToken, playlistId) {
 
   return tracks;
 }
-
-// function areTracksEqual(t1, t2) {
-//   return JSON.stringify(t1) === JSON.stringify(t2);
-// }
 
 //need to rewrite
 async function handleWeeklyBackup({
@@ -116,7 +113,6 @@ async function handleOneTimeBackup({ accessToken, supabaseUser, playlistId }) {
 
   try {
     const tracks = await spotifyService.getPlaylistTracks(
-      //good up to here -> we retrieved playlist tracks successfully
       accessToken,
       playlistId
     );

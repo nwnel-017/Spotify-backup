@@ -7,6 +7,7 @@ function tracksToCsv(tracks) {
   try {
     // Adjust fields to match the flat structure of the tracks array
     const fields = [
+      { label: "Track ID", value: "id" },
       { label: "Track Name", value: "name" },
       { label: "Artist", value: "artist" },
       { label: "Album", value: "album" },
