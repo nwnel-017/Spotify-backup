@@ -1,9 +1,32 @@
 const {
   handleWeeklyBackup,
   handleOneTimeBackup,
+  retrieveBackups,
 } = require("../services/backupService");
 
 const { scheduleBackup } = require("../jobs/weeklyBackup.js");
+
+async function getMyBackups(req, res) {
+  console.log("get my backups endpoint has been reached!");
+
+  const { supabaseUser, spotifyAccessToken } = req;
+
+  if (!supabaseUser || !spotifyAccessToken) {
+    throw new Error("Missing tokens from middleware!");
+  }
+
+  try {
+    const backups = await retrieveBackups({
+      accessToken: spotifyAccessToken,
+      supabaseUser: supabaseUser,
+    });
+
+    res.status(200).json(backups);
+  } catch (error) {
+    console.error("Error in getMyBackups:", error.message);
+    res.status(500).json({ error: "Failed to fetch backups" });
+  }
+}
 
 async function enableWeeklyBackup(req, res) {
   console.log("Enable weekly backup endpoint hit"); //reached
@@ -33,7 +56,6 @@ async function enableWeeklyBackup(req, res) {
 }
 
 async function oneTimeBackup(req, res) {
-  console.log("One-time backup endpoint hit");
   const accessToken = req.spotifyAccessToken;
   const playlistId = req.params.playlistId;
   const supabaseUser = req.supabaseUser;
@@ -64,4 +86,4 @@ async function oneTimeBackup(req, res) {
   }
 }
 
-module.exports = { enableWeeklyBackup, oneTimeBackup };
+module.exports = { enableWeeklyBackup, oneTimeBackup, getMyBackups };

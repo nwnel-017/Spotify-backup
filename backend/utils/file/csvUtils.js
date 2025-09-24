@@ -4,6 +4,7 @@ function tracksToCsv(tracks) {
   if (!tracks || tracks.length === 0) {
     throw new Error("No tracks available to convert to CSV");
   }
+
   try {
     // Adjust fields to match the flat structure of the tracks array
     const fields = [

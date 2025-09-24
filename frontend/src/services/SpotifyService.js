@@ -26,6 +26,36 @@ export const getSpotifyProfile = async () => {
   }
 };
 
+export const startSpotifyAuth = async (mode = "link") => {
+  console.log("starting auth with mode " + mode);
+
+  if (!mode) {
+    throw new Error("Error: startSpotifyAuth called incorrectly!");
+  }
+
+  let headers = {};
+  if (mode === "link") {
+    const session = await supabase.auth.getSession();
+    const token = session.data.session?.access_token;
+    headers = mode === "link" ? { Authorization: `Bearer ${token}` } : {}; /// we have an error logging in -> probably because there are no headers
+  }
+  try {
+    const res = await fetch(
+      `${process.env.REACT_APP_API_BASE_URL}/auth/login?mode=${mode}`,
+      { headers }
+    );
+
+    if (!res.ok) {
+      throw new Error("backend returned: " + res.status);
+    }
+    const { url } = await res.json();
+    console.log(url);
+    window.location.href = url;
+  } catch (error) {
+    console.log("Error retrieving Spotify URL: " + error);
+  }
+};
+
 export const linkSpotifyAccount = async () => {
   const session = await supabase.auth.getSession();
   const token = session.data.session.access_token;
@@ -64,6 +94,25 @@ export const fetchUserPlaylists = async (offset = 0, limit = 50) => {
   );
   return res.data;
 };
+
+export async function getMyBackups() {
+  console.log("fetching backups in frontend service");
+  const session = await supabase.auth.getSession();
+  const token = session.data.session.access_token;
+
+  try {
+    const res = await axios.get(
+      `${process.env.REACT_APP_API_BASE_URL}/backup/backups`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    return res.data;
+  } catch (error) {
+    console.log("Error retrieving backups from backend: " + error);
+  }
+}
 
 export async function backupPlaylist(playlistId, playlistName) {
   const session = await supabase.auth.getSession();

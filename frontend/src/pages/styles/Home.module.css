@@ -78,6 +78,13 @@
   color: var(--background-color);
 }
 
+.textFooter {
+  display: flex;
+  justify-content: center;
+  padding-top: 0;
+  margin-top: 0;
+}
+
 .header {
   display: flex;
   align-items: center;
@@ -204,7 +211,7 @@
 
 .popup {
   background: var(--spotify-lightgray);
-  width: 100vw;
+  width: 90vw;
   border-radius: 1rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   text-align: center;

@@ -30,26 +30,26 @@ async function fetchAccessToken() {
     console.log("✅ Spotify access token refreshed");
   } catch (error) {
     console.error(
-      "❌ Error fetching Spotify token:",
+      "Error fetching Spotify token:",
       error.response?.data || error.message
     );
   }
 }
 
-async function exchangeAndStoreTokens(code, state) {
+async function exchangeAndStoreTokens(code) {
   //Sign the JWT token and get userId
-  let decoded, userId;
-  try {
-    decoded = jwt.verify(state, process.env.SUPABASE_JWT_SECRET);
-    userId = decoded.userId;
-  } catch (err) {
-    console.error("Invalid or expired state JWT:", err);
-    throw new Error("Invalid state parameter");
-  }
+  // let decoded, userId;
+  // try {
+  //   decoded = jwt.verify(state, process.env.SUPABASE_JWT_SECRET);
+  //   userId = decoded.userId;
+  // } catch (err) {
+  //   console.error("Invalid or expired state JWT:", err);
+  //   throw new Error("Invalid state parameter");
+  // }
 
-  const authString = Buffer.from(`${clientId}:${clientSecret}`).toString(
-    "base64"
-  );
+  // const authString = Buffer.from(`${clientId}:${clientSecret}`).toString(
+  //   "base64"
+  // );
 
   //exchange code for tokens from spotify
   let tokens;
@@ -70,7 +70,7 @@ async function exchangeAndStoreTokens(code, state) {
     );
   } catch (error) {
     console.error(
-      "❌ Error exchanging code for token:",
+      "Error exchanging code for token:",
       error.response?.data || error.message
     );
     throw error;
@@ -121,7 +121,7 @@ async function refreshAccessToken(refreshToken) {
     return response; // Contains new access_token and possibly a new refresh_token
   } catch (error) {
     console.error(
-      "❌ Error refreshing access token:",
+      "Error refreshing access token:",
       error.response?.data || error.message
     );
     throw error;
@@ -151,22 +151,43 @@ async function storeTokens(userId, accessToken, refreshToken, expiresIn) {
 }
 
 async function getPlaylistTracks(accessToken, playlistId) {
+  const limit = 100; // Spotify's max per request
+  let offset = 0;
+  let allTracks = [];
+  // need to add song ID here
   try {
-    const response = await axios.get(
-      `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
-      {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }
-    );
-    const items = response.data.items.map((item) => ({
-      name: item.track.name,
-      artist: item.track.artists.map((a) => a.name).join(", "),
-      album: item.track.album.name,
-      added_at: item.added_at,
-    }));
+    while (true) {
+      const response = await axios.get(
+        `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          params: { limit, offset },
+        }
+      );
 
-    return items;
+      const items = response.data.items.map((item) => ({
+        id: item.track.id,
+        name: item.track.name,
+        artist: item.track.artists.map((a) => a.name).join(", "),
+        album: item.track.album.name,
+        added_at: item.added_at,
+      }));
+
+      allTracks = allTracks.concat(items);
+
+      // If we got fewer than `limit` items, we’re done
+      if (response.data.items.length < limit) break;
+
+      offset += limit;
+    }
+
+    console.log(`Retrieved ${allTracks.length} total tracks from Spotify`);
+    return allTracks;
   } catch (error) {
+    console.error(
+      "Error fetching playlist tracks:",
+      error.response?.data || error.message
+    );
     throw {
       status: error.response?.status || 500,
       message: error.response?.data || "Failed to fetch playlist tracks",

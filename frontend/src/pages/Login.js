@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import styles from "./styles/Home.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpotify } from "@fortawesome/free-brands-svg-icons";
+import { startSpotifyAuth } from "../services/SpotifyService";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -66,7 +67,10 @@ const LoginPage = () => {
         <p>or</p>
         <hr className={styles.divider} />
       </div>
-      <button className={`${styles.secondaryBtn} ${styles.spotifyLogin}`}>
+      <button
+        className={`${styles.secondaryBtn} ${styles.spotifyLogin}`}
+        onClick={() => startSpotifyAuth("login")}
+      >
         <FontAwesomeIcon icon={faSpotify} />
         Login with Spotify
       </button>

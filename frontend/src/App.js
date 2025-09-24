@@ -6,6 +6,7 @@ import Login from "./pages/Login.js";
 import SignupPage from "./pages/Signup.js";
 import Restore from "./pages/Restore.js";
 import Home from "./pages/Home.js";
+import Backups from "./pages/Backups.js";
 import LandingPage from "./pages/LandingPage.js";
 import GlobalLoading from "./context/GlobalLoading";
 
@@ -32,6 +33,14 @@ function App() {
           }
         />
         <Route path="/login" element={<Login />} />
+        <Route
+          path="/backups"
+          element={
+            <PrivateRoute>
+              <Backups />
+            </PrivateRoute>
+          }
+        />
       </Routes>
       <GlobalLoading />
     </>

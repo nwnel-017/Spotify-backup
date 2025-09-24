@@ -1,5 +1,7 @@
 const spotifyService = require("../services/spotifyService");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
+const supabase = require("../utils/supabase/supabaseClient"); // remove later -> move all supabase functionality to spotifyService.js
 
 exports.search = async (req, res) => {
   try {
@@ -14,19 +16,36 @@ exports.refreshToken = async (req, res) => {
   console.log("Refresh token not implemented in spotifyController");
 };
 
-exports.linkSpotify = (req, res) => {
+exports.connectSpotify = async (req, res) => {
+  console.log("reached backend connectSpotify");
+  const { mode = "login" } = req.query; // "login" or "link"
   const scope = "playlist-read-private playlist-read-collaborative";
-  let state;
-  try {
-    state = jwt.sign(
-      { userId: req.supabaseUser.sub }, // store the user ID
-      process.env.SUPABASE_JWT_SECRET, // your backend secret
-      { expiresIn: "10m" } // short-lived, 10 minutes
-    );
-  } catch (err) {
-    console.error("Error signing JWT:", err);
-    return res.status(500).json({ error: "Internal server error" });
-  } //correct up to here -> we signed the token
+  let statePayload;
+
+  if (mode === "link") {
+    // Retrieve session from headers and put in state
+    const supabaseUser = req.supabaseUser;
+    if (!supabaseUser) {
+      return res.status(401).json({ error: "Must be logged in to link" });
+    }
+
+    //generate a nonce
+    const nonce = crypto.randomBytes(16).toString("hex");
+
+    const { error } = await supabase.from("spotify_link_nonces").upsert({
+      nonce,
+      user_id: supabaseUser.id,
+      expires_at: new Date(Date.now() + 1000 * 60 * 5),
+    });
+
+    if (error) {
+      return res.status(500).json({ error: "database error" });
+    }
+
+    statePayload = { flow: "link", nonce: nonce };
+  } else {
+    statePayload = { flow: "login" };
+  }
 
   const queryParams = new URLSearchParams({
     response_type: "code",
@@ -34,7 +53,7 @@ exports.linkSpotify = (req, res) => {
     redirect_uri: process.env.REDIRECT_URI,
     client_id: process.env.SPOTIFY_CLIENT_ID,
     show_dialog: "true",
-    state: state,
+    state: JSON.stringify(statePayload), // Either contains supabase session or null depending on whether we are logging in / linking account
   });
 
   const url = `https://accounts.spotify.com/authorize?${queryParams}`;
@@ -44,8 +63,7 @@ exports.linkSpotify = (req, res) => {
 // store spotify tokens in supabase
 // to do: figure out how to get userId
 exports.handleCallback = async (req, res) => {
-  const code = req.query.code;
-  const state = req.query.state;
+  const { code, state } = req.query;
 
   if (!code || !state) {
     throw new Error(
@@ -53,17 +71,79 @@ exports.handleCallback = async (req, res) => {
     );
   }
 
-  try {
-    const tokens = await spotifyService.exchangeAndStoreTokens(code, state);
+  console.log("state received in callback: " + state);
 
-    // Redirect to frontend with the access token
-    res.redirect(`${process.env.CLIENT_URL}/home`);
+  let parsedState;
+  try {
+    parsedState = JSON.parse(state);
   } catch (error) {
-    console.error(
-      "Error getting tokens",
-      error.response?.data || error.message
-    );
-    res.status(400).json({ error: "Failed to get tokens" }); //hitting this error
+    return res.status(400).send("Invalid state");
+  }
+
+  // exchange code for token // move to spotifyService
+  const tokenRes = await fetch(`${process.env.SPOTIFY_TOKEN_URL}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization:
+        "Basic " +
+        Buffer.from(
+          process.env.SPOTIFY_CLIENT_ID +
+            ":" +
+            process.env.SPOTIFY_CLIENT_SECRET
+        ).toString("base64"),
+    },
+    body: new URLSearchParams({
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: process.env.REDIRECT_URI,
+    }),
+  });
+
+  const tokenData = await tokenRes.json();
+
+  if (!tokenData.access_token) {
+    return res.status(400).send("Failed to get spotify access tokens");
+  }
+
+  // fetch spotify user to check if they exist in database
+  const profileRes = await fetch("https://api.spotify.com/v1/me", {
+    headers: { Authorization: `Bearer ${tokenData.access_token}` },
+  });
+
+  const spotifyProfile = await profileRes.json();
+  const spotifyId = spotifyProfile.id;
+
+  // user is logging in to existing account through spotify
+  // To do -> add a spotifyId column to table to track the ID of the account
+  if (parsedState.flow === "login") {
+    const { data: existing } = await supabase
+      .from("spotify_users")
+      .select("user_id")
+      .eq("spotify_id", spotifyId)
+      .single();
+
+    let userId;
+
+    console.log(existing); // coming back as null
+
+    if (existing) {
+      userId = existing.user_id;
+    } else {
+      return res.status(500).send("User has not created an account!");
+    }
+
+    // Upsert tokens
+    await supabase.from("spotify_accounts").upsert({
+      user_id: userId,
+      spotify_id: spotifyId,
+      access_token: tokenData.access_token,
+      refresh_token: tokenData.refresh_token,
+    });
+
+    // Log user in (generate session)
+    // Note: you can use supabase.auth.admin.generateLink if you want redirect-based login
+    return res.redirect(`${process.env.CLIENT_URL}/home`);
   }
 };
 

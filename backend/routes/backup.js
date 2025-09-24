@@ -3,9 +3,12 @@ const router = express.Router();
 const {
   enableWeeklyBackup,
   oneTimeBackup,
+  getMyBackups,
 } = require("../controllers/BackupController");
 const authMiddleware = require("../middleware/authMiddleware");
 const spotifyAuthMiddleware = require("../middleware/spotifyAuthMiddleware");
+
+router.get("/backups", authMiddleware, spotifyAuthMiddleware, getMyBackups);
 
 // POST /api/backup/weekly
 router.post(

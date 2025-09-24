@@ -113,6 +113,7 @@ async function handleOneTimeBackup({ accessToken, supabaseUser, playlistId }) {
 
   try {
     const tracks = await spotifyService.getPlaylistTracks(
+      //only 100 were returned
       accessToken,
       playlistId
     );
@@ -124,4 +125,19 @@ async function handleOneTimeBackup({ accessToken, supabaseUser, playlistId }) {
   }
 }
 
-module.exports = { handleWeeklyBackup, handleOneTimeBackup };
+async function retrieveBackups({ accessToken, supabaseUser }) {
+  console.log(
+    "hit backupService.sj. attempting to retrieve backups from supabase"
+  );
+
+  const { data, error } = await supabase.from("weekly_backups").select("*");
+
+  if (error) {
+    console.error("Error fetching backups:", error);
+    throw new Error("Failed to fetch backups");
+  }
+
+  return data;
+}
+
+module.exports = { handleWeeklyBackup, handleOneTimeBackup, retrieveBackups };

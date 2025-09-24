@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { LoadingContext } from "../context/LoadingContext";
 import Playlists from "./Playlists";
 import Sidebar from "../components/Sidebar";
+import Backups from "./Backups";
 import {
   getSpotifyProfile,
   linkSpotifyAccount,
@@ -18,6 +19,7 @@ const Home = () => {
   const { startLoading, stopLoading } = useContext(LoadingContext);
   const [accountNotLinked, setAccountNotLinked] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [viewBackups, setViewBackups] = useState(false);
 
   // To Do: implement logout to refresh supabase JWT
   // if that fails, log out user
@@ -38,6 +40,11 @@ const Home = () => {
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
+  };
+
+  const closeWindows = () => {
+    setSidebarOpen(!sidebarOpen);
+    setViewBackups(!viewBackups);
     console.log("setSidebar = " + sidebarOpen);
   };
 
@@ -102,7 +109,11 @@ const Home = () => {
       </header>
       <Sidebar
         isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(!sidebarOpen)}
+        onClose={() => closeWindows()}
+        viewBackups={() => {
+          setViewBackups(!viewBackups);
+          setSidebarOpen(!sidebarOpen);
+        }}
       />
       <header className={styles.header}>
         <img
@@ -116,7 +127,11 @@ const Home = () => {
         <h1 className={styles.headerText}>{profile?.display_name}</h1>
       </header>
       <div>
-        <Playlists profileLoaded={!!profile} stopParentLoader={stopLoading} />
+        {viewBackups ? (
+          <Backups />
+        ) : (
+          <Playlists profileLoaded={!!profile} stopParentLoader={stopLoading} />
+        )}
       </div>
     </div>
   );
