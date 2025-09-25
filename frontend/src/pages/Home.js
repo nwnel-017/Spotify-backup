@@ -7,6 +7,7 @@ import Backups from "./Backups";
 import {
   getSpotifyProfile,
   linkSpotifyAccount,
+  startSpotifyAuth,
 } from "../services/SpotifyService";
 import { supabase } from "../supabase/supabaseClient";
 import { useAuth } from "../context/AuthContext";
@@ -86,7 +87,7 @@ const Home = () => {
           Your Spotify account is not linked. Please link your account to access
           all features.
         </h1>
-        <button onClick={linkSpotifyAccount}>
+        <button onClick={() => startSpotifyAuth("link")}>
           Click Here to Link Your Account
         </button>
       </div>

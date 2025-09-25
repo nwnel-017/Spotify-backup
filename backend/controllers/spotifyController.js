@@ -2,6 +2,7 @@ const spotifyService = require("../services/spotifyService");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const supabase = require("../utils/supabase/supabaseClient"); // remove later -> move all supabase functionality to spotifyService.js
+const { access } = require("fs");
 
 exports.search = async (req, res) => {
   try {
@@ -34,11 +35,12 @@ exports.connectSpotify = async (req, res) => {
 
     const { error } = await supabase.from("spotify_link_nonces").upsert({
       nonce,
-      user_id: supabaseUser.id,
+      user_id: supabaseUser,
       expires_at: new Date(Date.now() + 1000 * 60 * 5),
     });
 
     if (error) {
+      console.log("error inserting nonce: ", error);
       return res.status(500).json({ error: "database error" });
     }
 
@@ -57,11 +59,12 @@ exports.connectSpotify = async (req, res) => {
   });
 
   const url = `https://accounts.spotify.com/authorize?${queryParams}`;
+  console.log("Spotify auth URL: " + url);
   res.json({ url }); //send url back to frontend
 };
 
 // store spotify tokens in supabase
-// to do: figure out how to get userId
+// to do: move business logic to spotifyService.js
 exports.handleCallback = async (req, res) => {
   const { code, state } = req.query;
 
@@ -71,7 +74,7 @@ exports.handleCallback = async (req, res) => {
     );
   }
 
-  console.log("state received in callback: " + state);
+  console.log("state received in callback: " + state); // got here
 
   let parsedState;
   try {
@@ -81,6 +84,7 @@ exports.handleCallback = async (req, res) => {
   }
 
   // exchange code for token // move to spotifyService
+  // To do -> move this next section to spotifyService.js
   const tokenRes = await fetch(`${process.env.SPOTIFY_TOKEN_URL}`, {
     method: "POST",
     headers: {
@@ -102,6 +106,8 @@ exports.handleCallback = async (req, res) => {
 
   const tokenData = await tokenRes.json();
 
+  console.log("Token data received:", tokenData); // got here
+
   if (!tokenData.access_token) {
     return res.status(400).send("Failed to get spotify access tokens");
   }
@@ -114,13 +120,15 @@ exports.handleCallback = async (req, res) => {
   const spotifyProfile = await profileRes.json();
   const spotifyId = spotifyProfile.id;
 
+  console.log("Spotify profile fetched:", spotifyProfile); ////////////////////////////////////// success
+
   // user is logging in to existing account through spotify
   // To do -> add a spotifyId column to table to track the ID of the account
   if (parsedState.flow === "login") {
     const { data: existing } = await supabase
       .from("spotify_users")
       .select("user_id")
-      .eq("spotify_id", spotifyId)
+      .eq("spotify_user", spotifyId)
       .single();
 
     let userId;
@@ -141,10 +149,48 @@ exports.handleCallback = async (req, res) => {
       refresh_token: tokenData.refresh_token,
     });
 
-    // Log user in (generate session)
-    // Note: you can use supabase.auth.admin.generateLink if you want redirect-based login
     return res.redirect(`${process.env.CLIENT_URL}/home`);
+  } else if (parsedState.flow === "link") {
+    console.log("entered link flow in callback");
+    const nonce = parsedState.nonce;
+
+    if (!nonce) {
+      return res.status(400).send("Invalid state flow");
+    }
+    const linkRecord = await supabase
+      .from("spotify_link_nonces")
+      .select("*")
+      .eq("nonce", nonce)
+      .single();
+
+    if (!linkRecord || new Date(linkRecord.data.expires_at) < new Date()) {
+      return res.status(400).send("Invalid or expired link request");
+    }
+
+    await supabase.from("spotify_link_nonces").delete().eq("nonce", nonce);
+
+    const { data, error } = await supabase.from("spotify_users").upsert(
+      {
+        user_id: linkRecord.data.user_id, // has a value
+        spotify_user: spotifyId, // has a value
+        access_token: tokenData.access_token, // has a value
+        refresh_token: tokenData.refresh_token, // has a value
+        expires_at: new Date(
+          Date.now() + tokenData.expires_in * 1000
+        ).toISOString(),
+      },
+      { onConflict: ["user_id"] }
+    );
+    if (error) {
+      console.error("Error upserting spotify_users:", error);
+      return res.status(500).send("Database error during linking process");
+    }
+  } else {
+    return res.status(400).send("Invalid state flow");
   }
+
+  console.log("Spotify account linked successfully");
+  return res.redirect(`${process.env.CLIENT_URL}/home`);
 };
 
 exports.getPlaylistTracks = async (req, res) => {

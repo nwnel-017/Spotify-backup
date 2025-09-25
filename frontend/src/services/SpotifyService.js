@@ -37,43 +37,43 @@ export const startSpotifyAuth = async (mode = "link") => {
   if (mode === "link") {
     const session = await supabase.auth.getSession();
     const token = session.data.session?.access_token;
-    headers = mode === "link" ? { Authorization: `Bearer ${token}` } : {}; /// we have an error logging in -> probably because there are no headers
+    headers = { Authorization: `Bearer ${token}` }; /// we have an error logging in -> probably because there are no headers
   }
   try {
-    const res = await fetch(
-      `${process.env.REACT_APP_API_BASE_URL}/auth/login?mode=${mode}`,
-      { headers }
+    const res = await axios.get(
+      `${process.env.REACT_APP_API_BASE_URL}/auth/linkAccount?mode=${mode}`,
+      { headers: headers }
     );
 
-    if (!res.ok) {
+    if (res.status !== 200) {
       throw new Error("backend returned: " + res.status);
     }
-    const { url } = await res.json();
-    console.log(url);
+    const { url } = await res.data;
     window.location.href = url;
   } catch (error) {
     console.log("Error retrieving Spotify URL: " + error);
   }
 };
 
-export const linkSpotifyAccount = async () => {
-  const session = await supabase.auth.getSession();
-  const token = session.data.session.access_token;
+// delete later -> replaced with startSpotifyAuth
+// export const linkSpotifyAccount = async () => {
+//   const session = await supabase.auth.getSession();
+//   const token = session.data.session.access_token;
 
-  if (!token) {
-    throw new Error("User is not authenticated");
-  }
-  // Call backend to get Spotify auth URL
-  const res = await fetch(
-    `${process.env.REACT_APP_API_BASE_URL}/auth/linkAccount`,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    }
-  );
-  const { url } = await res.json();
-  console.log("Redirecting to Spotify auth URL:", url);
-  window.location.href = url;
-};
+//   if (!token) {
+//     throw new Error("User is not authenticated");
+//   }
+//   // Call backend to get Spotify auth URL
+//   const res = await fetch(
+//     `${process.env.REACT_APP_API_BASE_URL}/auth/linkAccount`,
+//     {
+//       headers: { Authorization: `Bearer ${token}` },
+//     }
+//   );
+//   const { url } = await res.json();
+//   console.log("Redirecting to Spotify auth URL:", url);
+//   window.location.href = url;
+// };
 
 // export const refreshSpotifyToken = async () => {
 //   const response = await axios.post(
