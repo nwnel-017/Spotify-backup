@@ -4,9 +4,53 @@ const crypto = require("crypto");
 const supabase = require("../utils/supabase/supabaseClient"); // remove later -> move all supabase functionality to spotifyService.js
 const { access } = require("fs");
 
+exports.getSession = async (req, res) => {
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser(req.cookies["sb-access-token"]);
+
+  if (error) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  // console.log("Session user:", user); // getting valid session info
+
+  return res.status(200).json({ user });
+};
+
+exports.login = async (req, res) => {
+  const { email, password } = req.body;
+  console.log("Login attempt for", email);
+
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required" });
+  }
+
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) {
+      return res.status(401).json({ error: error.message });
+    }
+    console.log("setting cookies");
+    spotifyService.setAuthCookies(res, data.session);
+
+    return res.status(200).json({ message: "Login successful" });
+
+    // return res.redirect(`${process.env.CLIENT_URL}/home`);
+  } catch (error) {
+    console.error("Login error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 exports.search = async (req, res) => {
   try {
     const results = await spotifyService.searchTracks(req.query.q);
+    ``;
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -19,11 +63,12 @@ exports.refreshToken = async (req, res) => {
 
 exports.connectSpotify = async (req, res) => {
   console.log("reached backend connectSpotify");
-  const { mode = "login" } = req.query; // "login" or "link"
+  // const { mode = "login" } = req.query; // "login" or "link"
+  const isLinkFlow = !!req.supabaseUser;
   const scope = "playlist-read-private playlist-read-collaborative";
   let statePayload;
 
-  if (mode === "link") {
+  if (isLinkFlow) {
     // Retrieve session from headers and put in state
     const supabaseUser = req.supabaseUser;
     if (!supabaseUser) {
@@ -64,7 +109,7 @@ exports.connectSpotify = async (req, res) => {
 };
 
 // store spotify tokens in supabase
-// to do: move business logic to spotifyService.js
+// to do: way to much code here -> goint to move business logic to spotifyService.js
 exports.handleCallback = async (req, res) => {
   const { code, state } = req.query;
 
@@ -73,8 +118,6 @@ exports.handleCallback = async (req, res) => {
       "Missing authorization code or state from Spotify in callback"
     );
   }
-
-  console.log("state received in callback: " + state); // got here
 
   let parsedState;
   try {
@@ -106,21 +149,23 @@ exports.handleCallback = async (req, res) => {
 
   const tokenData = await tokenRes.json();
 
-  console.log("Token data received:", tokenData); // got here
-
   if (!tokenData.access_token) {
     return res.status(400).send("Failed to get spotify access tokens");
   }
 
   // fetch spotify user to check if they exist in database
-  const profileRes = await fetch("https://api.spotify.com/v1/me", {
-    headers: { Authorization: `Bearer ${tokenData.access_token}` },
-  });
+  let spotifyProfile;
+  try {
+    const profileRes = await fetch("https://api.spotify.com/v1/me", {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    });
+    spotifyProfile = await profileRes.json();
+  } catch (error) {
+    console.error("Error fetching Spotify profile:", error);
+    return res.status(500).send("Failed to fetch Spotify profile");
+  }
 
-  const spotifyProfile = await profileRes.json();
   const spotifyId = spotifyProfile.id;
-
-  console.log("Spotify profile fetched:", spotifyProfile); ////////////////////////////////////// success
 
   // user is logging in to existing account through spotify
   // To do -> add a spotifyId column to table to track the ID of the account
@@ -149,7 +194,11 @@ exports.handleCallback = async (req, res) => {
       refresh_token: tokenData.refresh_token,
     });
 
-    return res.redirect(`${process.env.CLIENT_URL}/home`);
+    await spotifyService.setAuthCookies(res, {
+      access_token: tokenData.access_token,
+      refresh_token: tokenData.refresh_token,
+      expires_in: tokenData.expires_in,
+    });
   } else if (parsedState.flow === "link") {
     console.log("entered link flow in callback");
     const nonce = parsedState.nonce;
@@ -189,7 +238,7 @@ exports.handleCallback = async (req, res) => {
     return res.status(400).send("Invalid state flow");
   }
 
-  console.log("Spotify account linked successfully");
+  console.log("Spotify account logged in successfully");
   return res.redirect(`${process.env.CLIENT_URL}/home`);
 };
 

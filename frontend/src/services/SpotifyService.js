@@ -3,22 +3,14 @@ import { supabase } from "../supabase/supabaseClient";
 import csv from "../utils/csv";
 
 export const getSpotifyProfile = async () => {
-  //get supabase token
-  const session = await supabase.auth.getSession();
-  const accessToken = session.data.session
-    ? session.data.session.access_token
-    : null;
-
-  let response;
   try {
-    response = await axios.get(
+    const response = await axios.get(
       `${process.env.REACT_APP_API_BASE_URL}/spotify/profile`,
       {
-        headers: {
-          Authorization: `Bearer ${accessToken}`, // sends Supabase JWT
-        },
+        withCredentials: true,
       }
     );
+    console.log("Fetched Spotify profile:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error fetching Spotify profile:", error);
@@ -26,6 +18,33 @@ export const getSpotifyProfile = async () => {
   }
 };
 
+export const loginUser = async (email, password) => {
+  // To Do: sanitize input first and then send to backend
+  if (!email || !password) {
+    throw new Error("Email and password are required");
+  }
+
+  const response = await axios.post(
+    `${process.env.REACT_APP_API_BASE_URL}/auth/login`,
+    {
+      email,
+      password,
+    },
+    {
+      withCredentials: true,
+    }
+  );
+
+  console.log("Login response:", response);
+
+  if (response.status !== 200) {
+    throw new Error(`Login failed: ${response.status}`);
+  }
+
+  return response;
+};
+
+// To Do: we are now using cookies to manage sessions
 export const startSpotifyAuth = async (mode = "link") => {
   console.log("starting auth with mode " + mode);
 
@@ -33,17 +52,16 @@ export const startSpotifyAuth = async (mode = "link") => {
     throw new Error("Error: startSpotifyAuth called incorrectly!");
   }
 
-  let headers = {};
+  let endpoint;
   if (mode === "link") {
     const session = await supabase.auth.getSession();
     const token = session.data.session?.access_token;
-    headers = { Authorization: `Bearer ${token}` }; /// we have an error logging in -> probably because there are no headers
+    endpoint = `${process.env.REACT_APP_API_BASE_URL}/auth/linkAccount`;
+  } else if (mode === "login") {
+    endpoint = `${process.env.REACT_APP_API_BASE_URL}/auth/loginWithSpotify`;
   }
   try {
-    const res = await axios.get(
-      `${process.env.REACT_APP_API_BASE_URL}/auth/linkAccount?mode=${mode}`,
-      { headers: headers }
-    );
+    const res = await axios.get(endpoint, { withCredentials: true });
 
     if (res.status !== 200) {
       throw new Error("backend returned: " + res.status);
@@ -55,40 +73,11 @@ export const startSpotifyAuth = async (mode = "link") => {
   }
 };
 
-// delete later -> replaced with startSpotifyAuth
-// export const linkSpotifyAccount = async () => {
-//   const session = await supabase.auth.getSession();
-//   const token = session.data.session.access_token;
-
-//   if (!token) {
-//     throw new Error("User is not authenticated");
-//   }
-//   // Call backend to get Spotify auth URL
-//   const res = await fetch(
-//     `${process.env.REACT_APP_API_BASE_URL}/auth/linkAccount`,
-//     {
-//       headers: { Authorization: `Bearer ${token}` },
-//     }
-//   );
-//   const { url } = await res.json();
-//   console.log("Redirecting to Spotify auth URL:", url);
-//   window.location.href = url;
-// };
-
-// export const refreshSpotifyToken = async () => {
-//   const response = await axios.post(
-//     `${process.env.REACT_APP_API_BASE_URL}/spotify/refresh_token`
-//   );
-//   return response.data.access_token;
-// };
-
 export const fetchUserPlaylists = async (offset = 0, limit = 50) => {
-  const session = await supabase.auth.getSession();
-  const token = session.data.session.access_token;
   const res = await axios.get(
     `${process.env.REACT_APP_API_BASE_URL}/spotify/playlists`,
     {
-      headers: { Authorization: `Bearer ${token}` },
+      withCredentials: true,
       params: { offset, limit },
     }
   );
@@ -96,15 +85,11 @@ export const fetchUserPlaylists = async (offset = 0, limit = 50) => {
 };
 
 export async function getMyBackups() {
-  console.log("fetching backups in frontend service");
-  const session = await supabase.auth.getSession();
-  const token = session.data.session.access_token;
-
   try {
     const res = await axios.get(
       `${process.env.REACT_APP_API_BASE_URL}/backup/backups`,
       {
-        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
       }
     );
 
@@ -115,11 +100,6 @@ export async function getMyBackups() {
 }
 
 export async function backupPlaylist(playlistId, playlistName) {
-  const session = await supabase.auth.getSession();
-  const token = session.data.session.access_token;
-
-  console.log("service - Backing up playlist:", playlistId, playlistName);
-
   if (!playlistId || !playlistName) {
     throw new Error("Playlist ID or name missing!");
   }
@@ -132,7 +112,7 @@ export async function backupPlaylist(playlistId, playlistName) {
       `${process.env.REACT_APP_API_BASE_URL}/backup/single/${playlistId}`,
       {},
       {
-        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
         responseType: "blob", // Set response type to blob
       }
     );
@@ -152,20 +132,12 @@ export async function backupPlaylist(playlistId, playlistName) {
 }
 
 export async function triggerWeeklyBackup(playlistId, playlistName) {
-  const session = await supabase.auth.getSession();
-  const accessToken = session.data.session.access_token;
-  if (!accessToken || !playlistId) {
-    throw new Error("Missing required parameters for weekly backup");
-  }
   console.log("calling weekly backup API"); // successfully reached
   const res = await axios.post(
     "http://localhost:5000/api/backup/weekly",
     { playlistId, playlistName }, // POST body
     {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
+      withCredentials: true,
     }
   );
 

@@ -51,7 +51,6 @@ const Home = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      // setLoading({ active: true, type: "page" }); // solid loader
       startLoading("page");
       try {
         const data = await getSpotifyProfile();

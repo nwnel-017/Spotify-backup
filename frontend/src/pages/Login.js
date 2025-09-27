@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import styles from "./styles/Home.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpotify } from "@fortawesome/free-brands-svg-icons";
-import { startSpotifyAuth } from "../services/SpotifyService";
+import { startSpotifyAuth, loginUser } from "../services/SpotifyService";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -23,17 +23,18 @@ const LoginPage = () => {
     setMessage("");
     console.log("Logging in with", { email, password });
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      console.log(`Login failed: ${error.message}`);
-    } else {
-      console.log("Login successful!");
-      // You can now redirect or fetch user data
+    try {
+      const res = await loginUser(email, password);
+      console.log("Login successful");
+      if (res.status !== 200) {
+        setMessage("Login failed: " + res.statusText);
+        console.log("Login failed with status", res.status);
+        return;
+      }
       navigate("/home");
+    } catch (error) {
+      console.error("Login error:", error);
+      setMessage("Login failed: " + error.message);
     }
   };
 
@@ -58,10 +59,13 @@ const LoginPage = () => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         ></input>
+        <button type="submit" className={styles.submitButton}>
+          Login
+        </button>
       </form>
-      <button onClick={handleLogin} className={styles.submitButton}>
+      {/* <button onClick={handleLogin} className={styles.submitButton}>
         Login
-      </button>
+      </button> */}
       <div className={styles.dividerContainer}>
         <hr className={styles.divider} />
         <p>or</p>

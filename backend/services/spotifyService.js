@@ -36,22 +36,23 @@ async function fetchAccessToken() {
   }
 }
 
+function setAuthCookies(res, session) {
+  res.cookie("sb-access-token", session.access_token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: session.expires_in * 1000,
+  });
+
+  res.cookie("sb-refresh-token", session.refresh_token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 30 * 1000,
+  });
+}
+
 async function exchangeAndStoreTokens(code) {
-  //Sign the JWT token and get userId
-  // let decoded, userId;
-  // try {
-  //   decoded = jwt.verify(state, process.env.SUPABASE_JWT_SECRET);
-  //   userId = decoded.userId;
-  // } catch (err) {
-  //   console.error("Invalid or expired state JWT:", err);
-  //   throw new Error("Invalid state parameter");
-  // }
-
-  // const authString = Buffer.from(`${clientId}:${clientSecret}`).toString(
-  //   "base64"
-  // );
-
-  //exchange code for tokens from spotify
   let tokens;
   try {
     tokens = await axios.post(
@@ -243,4 +244,5 @@ module.exports = {
   getPlaylistTracks,
   getPlaylists,
   getProfileInfo,
+  setAuthCookies,
 };

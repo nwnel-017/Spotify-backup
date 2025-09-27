@@ -2,13 +2,21 @@ const express = require("express");
 const authMiddleware = require("../middleware/authMiddleware");
 const router = express.Router();
 const {
+  getSession,
+  login,
   connectSpotify,
   handleCallback,
   refreshToken,
 } = require("../controllers/spotifyController");
 
+// get session
+router.get("/me", getSession);
+
+// Standard Login
+router.post("/login", login);
+
 // Login through Spotify OAuth
-router.get("/login", connectSpotify);
+router.get("/loginWithSpotify", connectSpotify);
 
 // Link spotify accout with OAuth
 router.get("/linkAccount", authMiddleware, connectSpotify);

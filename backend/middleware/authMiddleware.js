@@ -9,17 +9,18 @@ const supabase = require("../utils/supabase/supabaseClient");
 // attach spotify tokens and supabase user info to req object
 module.exports = async function (req, res, next) {
   try {
-    const authHeader = req.headers.authorization;
-    const supabaseToken = authHeader?.split(" ")[1]; // "Bearer <token>"
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(req.cookies["sb-access-token"]);
 
-    // Verify Supabase JWT
-    let decoded;
-    try {
-      decoded = jwt.verify(supabaseToken, process.env.SUPABASE_JWT_SECRET);
-    } catch (err) {
-      return res.status(401).json({ error: "JWT expired or invalid" });
+    if (error || !user) {
+      return res.status(401).json({ error: "Not authenticated" });
     }
-    req.supabaseUser = decoded.sub; // contains `sub`, `email`, etc.
+
+    // console.log("Authenticated user from middleware:", user);
+
+    req.supabaseUser = user.id;
 
     next();
   } catch (error) {
