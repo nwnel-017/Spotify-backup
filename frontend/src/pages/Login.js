@@ -6,6 +6,7 @@ import styles from "./styles/Home.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpotify } from "@fortawesome/free-brands-svg-icons";
 import { startSpotifyAuth, loginUser } from "../services/SpotifyService";
+import { validateInput } from "./../utils/validator";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -20,7 +21,17 @@ const LoginPage = () => {
       return;
     }
 
-    setMessage("");
+    const {
+      valid,
+      email: sanitizedEmail,
+      password: sanitizedPassword,
+    } = validateInput(email, password);
+
+    if (!valid) {
+      setMessage("Invalid email or password format.");
+      return;
+    }
+
     console.log("Logging in with", { email, password });
 
     try {

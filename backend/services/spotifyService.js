@@ -36,20 +36,25 @@ async function fetchAccessToken() {
   }
 }
 
-function setAuthCookies(res, session) {
-  res.cookie("sb-access-token", session.access_token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: session.expires_in * 1000,
-  });
+async function setAuthCookies(res, session) {
+  try {
+    res.cookie("sb-access-token", session.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: session.expires_in * 1000,
+    });
 
-  res.cookie("sb-refresh-token", session.refresh_token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 30 * 1000,
-  });
+    res.cookie("sb-refresh-token", session.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 30 * 1000,
+    });
+  } catch (error) {
+    console.error("Error setting auth cookies:", error);
+    throw new Error("Failed to set authentication cookies");
+  }
 }
 
 async function exchangeAndStoreTokens(code) {

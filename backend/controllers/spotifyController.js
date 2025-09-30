@@ -37,7 +37,7 @@ exports.login = async (req, res) => {
     }
     console.log("setting cookies");
     spotifyService.setAuthCookies(res, data.session);
-
+    console.log("cookies successfully set");
     return res.status(200).json({ message: "Login successful" });
 
     // return res.redirect(`${process.env.CLIENT_URL}/home`);
@@ -63,7 +63,6 @@ exports.refreshToken = async (req, res) => {
 
 exports.connectSpotify = async (req, res) => {
   console.log("reached backend connectSpotify");
-  // const { mode = "login" } = req.query; // "login" or "link"
   const isLinkFlow = !!req.supabaseUser;
   const scope = "playlist-read-private playlist-read-collaborative";
   let statePayload;
@@ -126,8 +125,7 @@ exports.handleCallback = async (req, res) => {
     return res.status(400).send("Invalid state");
   }
 
-  // exchange code for token // move to spotifyService
-  // To do -> move this next section to spotifyService.js
+  // 1. exchange code for token // move to spotifyService
   const tokenRes = await fetch(`${process.env.SPOTIFY_TOKEN_URL}`, {
     method: "POST",
     headers: {
@@ -147,13 +145,13 @@ exports.handleCallback = async (req, res) => {
     }),
   });
 
-  const tokenData = await tokenRes.json();
+  const tokenData = await tokenRes.json(); // spotify access tokens
 
   if (!tokenData.access_token) {
     return res.status(400).send("Failed to get spotify access tokens");
   }
 
-  // fetch spotify user to check if they exist in database
+  // 2. fetch spotify user to get spotifyId
   let spotifyProfile;
   try {
     const profileRes = await fetch("https://api.spotify.com/v1/me", {
@@ -170,35 +168,42 @@ exports.handleCallback = async (req, res) => {
   // user is logging in to existing account through spotify
   // To do -> add a spotifyId column to table to track the ID of the account
   if (parsedState.flow === "login") {
-    const { data: existing } = await supabase
-      .from("spotify_users")
-      .select("user_id")
-      .eq("spotify_user", spotifyId)
-      .single();
+    try {
+      const { data: existing } = await supabase //get userId from spotifyId
+        .from("spotify_users")
+        .select("user_id")
+        .eq("spotify_user", spotifyId)
+        .single();
 
-    let userId;
+      let userId;
 
-    console.log(existing); // coming back as null
+      console.log(existing); // coming back as null
 
-    if (existing) {
-      userId = existing.user_id;
-    } else {
-      return res.status(500).send("User has not created an account!");
+      if (existing) {
+        userId = existing.user_id;
+      } else {
+        return res.status(500).send("User has not created an account!");
+      }
+
+      // Upsert tokens
+      await supabase.from("spotify_users").upsert({
+        user_id: userId,
+        spotify_id: spotifyId,
+        access_token: tokenData.access_token,
+        refresh_token: tokenData.refresh_token,
+      });
+
+      // To Do -> sign in with supabase and set cookies
+      // this isnt a function - figure out another way
+      const { data, error } = await supabase.auth.admin.createSession({
+        user_id: userId,
+      });
+
+      spotifyService.setAuthCookies(res, data.session);
+    } catch (error) {
+      console.error("Error during login flow:", error);
+      return res.status(500).send("Database error during login process");
     }
-
-    // Upsert tokens
-    await supabase.from("spotify_accounts").upsert({
-      user_id: userId,
-      spotify_id: spotifyId,
-      access_token: tokenData.access_token,
-      refresh_token: tokenData.refresh_token,
-    });
-
-    await spotifyService.setAuthCookies(res, {
-      access_token: tokenData.access_token,
-      refresh_token: tokenData.refresh_token,
-      expires_in: tokenData.expires_in,
-    });
   } else if (parsedState.flow === "link") {
     console.log("entered link flow in callback");
     const nonce = parsedState.nonce;
@@ -240,6 +245,7 @@ exports.handleCallback = async (req, res) => {
 
   console.log("Spotify account logged in successfully");
   return res.redirect(`${process.env.CLIENT_URL}/home`);
+  // return res.status(200).send("Spotify account connected successfully");
 };
 
 exports.getPlaylistTracks = async (req, res) => {

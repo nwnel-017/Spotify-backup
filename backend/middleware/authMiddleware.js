@@ -18,8 +18,6 @@ module.exports = async function (req, res, next) {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    // console.log("Authenticated user from middleware:", user);
-
     req.supabaseUser = user.id;
 
     next();

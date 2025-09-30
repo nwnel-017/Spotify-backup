@@ -14,13 +14,11 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <LoadingProvider>
-          {/* ✅ wrap App in AuthProvider */}
-          {/* <Toaster position="top-center" reverseOrder={false} /> */}
+      <LoadingProvider>
+        <AuthProvider>
           <App />
-        </LoadingProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </LoadingProvider>
     </BrowserRouter>
   </React.StrictMode>
 );
