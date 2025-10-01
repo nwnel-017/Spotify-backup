@@ -58,8 +58,24 @@ exports.search = async (req, res) => {
 };
 
 exports.refreshToken = async (req, res) => {
-  console.log("Refresh token not implemented in spotifyController");
+  try {
+    const refreshToken = res.cookies["sb-refresh-token"];
+    if (!refreshToken) {
+      return res.status(400).json({ error: "No refresh token provided" });
+    }
+
+    const newSession = await spotifyService.refreshAccessToken(refreshToken);
+    spotifyService.setAuthCookies(res, newSession);
+    return res.status(200).json({ message: "Token refreshed" });
+  } catch (error) {
+    console.error("Error refreshing token:", error);
+    return res.status(500).json({ error: "Failed to refresh token" });
+  }
 };
+
+// exports.refreshSpotifyToken = async (req, res) => {
+//   console.log("Reached refreshSpotifyToken in controller");
+// };
 
 exports.connectSpotify = async (req, res) => {
   console.log("reached backend connectSpotify");
@@ -299,29 +315,5 @@ exports.getProfile = async (req, res) => {
   } catch (error) {
     console.error("Error fetching profile info", error.response.data);
     res.status(500).json({ error: "Failed to fetch profile" });
-  }
-};
-
-exports.getRefreshToken = async (req, res) => {
-  const refreshToken = req.body.refresh_token; // Get refresh token from request body
-  const clientId = process.env.SPOTIFY_CLIENT_ID;
-  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
-
-  if (!refreshToken) {
-    return res
-      .status(400)
-      .json({ error: "Missing refresh token in request body" });
-  }
-
-  try {
-    const response = await spotifyService.refreshAccessToken(
-      refreshToken,
-      clientId,
-      clientSecret
-    );
-    res.json(response.data);
-  } catch (error) {
-    console.error("Error refreshing token", error.response.data);
-    res.status(500).json({ error: "Failed to refresh token" });
   }
 };

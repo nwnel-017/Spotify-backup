@@ -25,6 +25,6 @@ router.get(
 router.get("/profile", authMiddleware, spotifyAuthMiddleware, getProfile);
 
 // POST to refresh access token
-router.post("/refresh_token", authMiddleware, getRefreshToken);
+// router.post("/refresh_token", authMiddleware, getRefreshToken);
 
 module.exports = router;

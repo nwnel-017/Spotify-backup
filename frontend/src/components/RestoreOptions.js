@@ -2,11 +2,7 @@ import styles from "../pages/styles/Home.module.css";
 import { faArrowRotateRight, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
-const RestoreOptions = ({ active, onClose, backup }) => {
-  const restorePlaylist = async () => {};
-
-  const removeBackup = async () => {};
-
+const RestoreOptions = ({ active, onClose, removeBackup, restorePlaylist }) => {
   return (
     <div
       className={`${styles.overlay} ${active ? styles.active : ""}`}
@@ -21,11 +17,11 @@ const RestoreOptions = ({ active, onClose, backup }) => {
               className={styles.backupIcon}
               onClick={() => restorePlaylist()}
             />
-            <h5>Save playlist as a CSV file</h5>
+            <h5>Restore my Playlist</h5>
           </div>
           <div className={styles.backupOption}>
             <FontAwesomeIcon icon={faTrash} onClick={() => removeBackup()} />
-            <h5>Restore to Playlist to Spotify with Backup</h5>
+            <h5>Remove my Weekly Backup</h5>
           </div>
         </div>
         {/* <span className={`${styles.textFooter} ${styles.smallText}`}>

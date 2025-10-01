@@ -2,9 +2,13 @@ const {
   handleWeeklyBackup,
   handleOneTimeBackup,
   retrieveBackups,
+  removeBackup,
 } = require("../services/backupService");
 
-const { scheduleBackup } = require("../jobs/weeklyBackup.js");
+const {
+  scheduleBackup,
+  cancelWeeklyBackup,
+} = require("../jobs/weeklyBackup.js");
 
 async function getMyBackups(req, res) {
   console.log("get my backups endpoint has been reached!");
@@ -86,4 +90,39 @@ async function oneTimeBackup(req, res) {
   }
 }
 
-module.exports = { enableWeeklyBackup, oneTimeBackup, getMyBackups };
+async function deleteBackup(req, res) {
+  console.log(
+    "Delete backup endpoint hit. attempting to delete playlist: " +
+      req.params.playlistId
+  );
+  try {
+    cancelWeeklyBackup(req.params.playlistId);
+
+    await removeBackup(req.params.playlistId);
+
+    return res.status(200).json({ message: "successfully deleted backup" });
+  } catch (error) {
+    console.error("Error deleting backup:", error);
+    return res.status(500).json({ error: "Failed to delete backup" });
+  }
+}
+
+async function restorePlaylist(req, res) {
+  console.log("reached restore playlist controller"); // successfully reached
+  return res
+    .status(200)
+    .json({ message: "reached restore playlist controller" });
+
+  // To Do: implement restore functionality
+  // first retrieve the playlist data from supabase
+  // then use Supabase/Postgres jsonb_to_recordset - explode jsonb into rows we can read
+  // research what is the best way to do this with maximum efficiency
+}
+
+module.exports = {
+  enableWeeklyBackup,
+  oneTimeBackup,
+  getMyBackups,
+  deleteBackup,
+  restorePlaylist,
+};

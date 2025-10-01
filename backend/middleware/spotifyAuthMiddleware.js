@@ -35,7 +35,7 @@ module.exports = async function spotifyAuthMiddleware(req, res, next) {
     // Refresh the access token
     // Store the new token in supabase
     try {
-      const newToken = await spotifyService.refreshAccessToken(
+      const newToken = await spotifyService.refreshSpotifyToken(
         refresh_token,
         process.env.SPOTIFY_CLIENT_ID,
         process.env.SPOTIFY_CLIENT_SECRET

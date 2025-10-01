@@ -4,9 +4,12 @@ const {
   enableWeeklyBackup,
   oneTimeBackup,
   getMyBackups,
+  deleteBackup,
+  restorePlaylist,
 } = require("../controllers/BackupController");
 const authMiddleware = require("../middleware/authMiddleware");
 const spotifyAuthMiddleware = require("../middleware/spotifyAuthMiddleware");
+const { rest } = require("../utils/supabase/supabaseClient");
 
 router.get("/backups", authMiddleware, spotifyAuthMiddleware, getMyBackups);
 
@@ -24,6 +27,21 @@ router.post(
   authMiddleware,
   spotifyAuthMiddleware,
   oneTimeBackup
+);
+
+// POST /api/backup/restore/id
+router.post(
+  "/restore/:playlistId",
+  authMiddleware,
+  spotifyAuthMiddleware,
+  restorePlaylist
+);
+
+router.delete(
+  "/delete/:playlistId",
+  authMiddleware,
+  spotifyAuthMiddleware,
+  deleteBackup
 );
 
 module.exports = router;

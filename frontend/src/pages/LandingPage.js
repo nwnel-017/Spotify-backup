@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-// import LaptopAnimation from "../assets/animations/LaptopAnimation.json";
 import { Player } from "@lottiefiles/react-lottie-player";
 import styles from "../pages/styles/Home.module.css";
 
@@ -11,7 +10,7 @@ const LandingPage = () => {
         <Player
           autoplay
           loop
-          src="/animations/LaptopAnimation.json" // if in /public
+          src="/animations/LaptopAnimation.json"
           className={styles.laptopAnimation}
         />
         <div className={styles.landingContent}>

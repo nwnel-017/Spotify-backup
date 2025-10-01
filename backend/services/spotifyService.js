@@ -11,29 +11,7 @@ const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 const TOKEN_REFRESH_INTERVAL = 3500 * 1000; // ~58 minutes
 
 async function fetchAccessToken() {
-  const authString = Buffer.from(`${clientId}:${clientSecret}`).toString(
-    "base64"
-  );
-
-  try {
-    const response = await axios.post(
-      tokenUrl,
-      "grant_type=client_credentials",
-      {
-        headers: {
-          Authorization: `Basic ${authString}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      }
-    );
-    accessToken = response.data.access_token;
-    console.log("✅ Spotify access token refreshed");
-  } catch (error) {
-    console.error(
-      "Error fetching Spotify token:",
-      error.response?.data || error.message
-    );
-  }
+  // To Do: retrieve supabase logic -> move code from spotifyController.js here
 }
 
 async function setAuthCookies(res, session) {
@@ -102,7 +80,25 @@ async function exchangeAndStoreTokens(code) {
   return { access_token, refresh_token, expires_in };
 }
 
+// refreshes token for supabase user
 async function refreshAccessToken(refreshToken) {
+  // To Do: implement token refresh logic
+  const { data, error } = await supabase.auth.refreshSession({
+    refresh_token: refreshToken,
+  });
+
+  if (error || !data.session) {
+    console.log("Error refreshing session");
+    return res.status(401).json({ error: "Error refreshing session" });
+  }
+
+  return data.session;
+}
+
+// refresh token for spotify api
+async function refreshSpotifyToken(refreshToken, clientId, clientSecret) {
+  console.log("Reached refreshSpotifyToken in service");
+
   const authString = Buffer.from(`${clientId}:${clientSecret}`).toString(
     "base64"
   );
@@ -132,28 +128,6 @@ async function refreshAccessToken(refreshToken) {
     );
     throw error;
   }
-}
-
-async function storeTokens(userId, accessToken, refreshToken, expiresIn) {
-  // Implement storing tokens in your database (e.g., Supabase)
-  const expires_at = new Date(Date.now() + expires_in * 1000).toISOString();
-
-  const { data, error } = await supabase.from("spotify_users").upsert(
-    {
-      user_id: userId,
-      access_token,
-      refresh_token,
-      expires_at,
-    },
-    { onConflict: ["user_id"] } // ensures update if user_id exists
-  );
-
-  if (error) {
-    console.error("Error saving Spotify tokens:", error);
-    throw new Error("Failed to save Spotify tokens");
-  }
-
-  return data;
 }
 
 async function getPlaylistTracks(accessToken, playlistId) {
@@ -250,4 +224,5 @@ module.exports = {
   getPlaylists,
   getProfileInfo,
   setAuthCookies,
+  refreshSpotifyToken,
 };

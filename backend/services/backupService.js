@@ -125,6 +125,23 @@ async function handleOneTimeBackup({ accessToken, supabaseUser, playlistId }) {
   }
 }
 
+async function removeBackup(playlistId) {
+  console.log("Hello from backupService.removeBackup");
+  if (!playlistId) {
+    throw new Error("No backup ID provided to deleteBackup");
+  }
+
+  const { error } = await supabase
+    .from("weekly_backups")
+    .delete()
+    .eq("id", playlistId);
+
+  if (error) {
+    console.error("Error deleting backup from Supabase:", error);
+    throw error;
+  }
+}
+
 async function retrieveBackups({ accessToken, supabaseUser }) {
   console.log(
     "hit backupService.sj. attempting to retrieve backups from supabase"
@@ -140,4 +157,9 @@ async function retrieveBackups({ accessToken, supabaseUser }) {
   return data;
 }
 
-module.exports = { handleWeeklyBackup, handleOneTimeBackup, retrieveBackups };
+module.exports = {
+  handleWeeklyBackup,
+  handleOneTimeBackup,
+  retrieveBackups,
+  removeBackup,
+};

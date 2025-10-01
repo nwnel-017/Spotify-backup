@@ -5,12 +5,15 @@ const {
   getSession,
   login,
   connectSpotify,
-  handleCallback,
   refreshToken,
+  handleCallback,
 } = require("../controllers/spotifyController");
 
 // get session
 router.get("/me", getSession);
+
+// refresh access token
+router.get("/refreshToken", refreshToken);
 
 // Standard Login
 router.post("/login", login);
@@ -23,8 +26,6 @@ router.get("/linkAccount", authMiddleware, connectSpotify);
 
 // 2. Handle callback and exchange code for access token
 router.get("/callback", handleCallback);
-
-router.get("/refreshToken", refreshToken);
 
 router.get("/logout", (req, res) => {
   console.log("logout not implemented yet");

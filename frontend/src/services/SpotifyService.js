@@ -147,3 +147,42 @@ export async function triggerWeeklyBackup(playlistId, playlistName) {
 
   return res;
 }
+
+export async function deleteBackup(playlistId) {
+  if (!playlistId) {
+    throw new Error("No backup ID provided to deleteBackup");
+  }
+  console.log("Deleting backup with ID: " + playlistId);
+  try {
+    const res = await axios.delete(
+      `${process.env.REACT_APP_API_BASE_URL}/backup/delete/${playlistId}`,
+      {
+        withCredentials: true,
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.log("Error deleting backup: " + error);
+    throw error;
+  }
+}
+
+export async function restorePlaylist(playlistId) {
+  console.log("Restoring playlist with ID: " + playlistId);
+  if (!playlistId) {
+    throw new Error("No backup ID provided to restorePlaylist");
+  }
+
+  try {
+    await axios.post(
+      `${process.env.REACT_APP_API_BASE_URL}/backup/restore/${playlistId}`,
+      {},
+      {
+        withCredentials: true,
+      }
+    );
+  } catch (error) {
+    console.log("Error restoring backup: " + error);
+    throw new Error("Error restoring backup: " + error.message);
+  }
+}
