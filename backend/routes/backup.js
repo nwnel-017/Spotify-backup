@@ -10,7 +10,7 @@ const {
 const authMiddleware = require("../middleware/authMiddleware");
 const spotifyAuthMiddleware = require("../middleware/spotifyAuthMiddleware");
 const restoreBackupMiddleware = require("../middleware/restoreBackupMiddleware");
-const restoreCsvMiddleware = require("../middleware/restoreCsvMiddlware");
+const restoreCsvMiddleware = require("../middleware/restoreCsvMiddleware");
 const { rest, auth } = require("../utils/supabase/supabaseClient");
 
 router.get("/backups", authMiddleware, spotifyAuthMiddleware, getMyBackups);
@@ -45,6 +45,10 @@ router.post(
   "/upload",
   authMiddleware,
   spotifyAuthMiddleware,
+  (req, res, next) => {
+    console.log("Reached router before multer"); // <-- see if this prints
+    next();
+  },
   restoreCsvMiddleware,
   restorePlaylist
 );

@@ -3,6 +3,7 @@ const {
   handleOneTimeBackup,
   retrieveBackups,
   removeBackup,
+  createSpotifyPlaylist,
 } = require("../services/backupService");
 
 const {
@@ -109,16 +110,42 @@ async function deleteBackup(req, res) {
 
 async function restorePlaylist(req, res) {
   console.log("reached restore playlist controller"); // successfully reached
-  return res
-    .status(200)
-    .json({ message: "reached restore playlist controller" });
+  // console.log("CSV contents:", req.trackIds); // reached correctly
 
-  // To Do: req will either contain trackIds (from CSV upload) or playlistContent (from backup restore)
-  // use these to assign a flow variable uploadFromBackup
+  const restoreFromDb = !req.trackIds;
+  console.log(restoreFromDb);
+  let trackIds;
+  let playlistName;
+
+  if (restoreFromDb) {
+    // To Do: if restoreFromDb - grab jsonb and playlist name from suapabse
+    // convert jsonb to track ids
+  } else {
+    trackIds = req.trackIds;
+    playlistName = req.playlistName;
+  }
+
   // if uploadFromBackup, then call we need to convert JSONB to trackIds
   // call spotify API to create a new playlist with `${playlistName} - Restored ${date}`
   // add tracks to this playlist in batches of 100
   // return success / failure message
+  console.log("trackIds : " + trackIds);
+  console.log("playlist name: " + playlistName);
+  if (!trackIds || !playlistName) {
+    //both undefined
+    console.log("Missing params!");
+    return res.status(500).json({
+      message: "Error - missing track Ids or playlist name in controller!",
+    });
+  }
+
+  try {
+    await createSpotifyPlaylist(playlistName, trackIds);
+    return res.status(200).json({ message: "Sucessfully restored playlist" });
+  } catch (error) {
+    console.log("Error in Backup Controller: " + error);
+    return res.status(500).json({ message: "Error in Backup Controller!" });
+  }
 }
 
 module.exports = {

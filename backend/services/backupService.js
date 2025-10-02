@@ -157,9 +157,18 @@ async function retrieveBackups({ accessToken, supabaseUser }) {
   return data;
 }
 
+async function createSpotifyPlaylist(playlistName, trackIds) {
+  if (!playlistName || !trackIds) {
+    console.log("Missing track ids or playlist name params in backup service!");
+    throw new Error("Error in Service - missing params to create playlist");
+  }
+  console.log("Hit restorePlaylist() in backupService!");
+}
+
 module.exports = {
   handleWeeklyBackup,
   handleOneTimeBackup,
   retrieveBackups,
   removeBackup,
+  createSpotifyPlaylist,
 };

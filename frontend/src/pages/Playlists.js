@@ -133,14 +133,12 @@ const Playlists = ({ stopParentLoader }) => {
   };
 
   const displayBackupOptions = (playlistId, playlistName) => {
-    console.log("opening popup for playlist: " + playlistId);
     setShowPopup(true);
     setSelectedPlaylist([playlistId, playlistName]);
     console.log(showPopup);
   };
 
   const closePopup = () => {
-    console.log("closing popup window");
     setShowPopup(false);
     setSelectedPlaylist(null);
   };

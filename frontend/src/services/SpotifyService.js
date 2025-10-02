@@ -187,17 +187,18 @@ export async function restorePlaylist(playlistId) {
   }
 }
 
-export async function uploadCSV(file) {
+export async function uploadCSV(file, playlistName) {
   console.log("Uploading CSV file:", file);
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("playlistName", playlistName);
   try {
-    const res = await axios.post(
+    await axios.post(
       `${process.env.REACT_APP_API_BASE_URL}/backup/upload`,
-      file,
+      formData,
       {
         withCredentials: true,
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
       }
     );
   } catch (error) {

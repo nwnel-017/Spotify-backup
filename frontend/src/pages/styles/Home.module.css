@@ -37,6 +37,10 @@
   padding: 0.3rem 0.6rem;
 }
 
+#playlistTitleForm {
+  outline: 1px solid var(--spotify-text-color);
+}
+
 .fileUploadForm {
   /* border: 2px solid blue; */
   padding: 1rem;
