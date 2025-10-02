@@ -186,3 +186,23 @@ export async function restorePlaylist(playlistId) {
     throw new Error("Error restoring backup: " + error.message);
   }
 }
+
+export async function uploadCSV(file) {
+  console.log("Uploading CSV file:", file);
+  try {
+    const res = await axios.post(
+      `${process.env.REACT_APP_API_BASE_URL}/backup/upload`,
+      file,
+      {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+  } catch (error) {
+    console.error("Error uploading CSV file:", error);
+    throw new Error("Error uploading CSV file: " + error.message);
+  }
+  return;
+}

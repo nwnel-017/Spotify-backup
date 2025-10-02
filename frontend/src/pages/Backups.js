@@ -5,12 +5,14 @@ import styles from "./styles/Home.module.css";
 import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import RestoreOptions from "../components/RestoreOptions";
+import FileRestore from "../components/FileRestore";
 import { deleteBackup, restorePlaylist } from "../services/SpotifyService";
 import { LoadingContext } from "../context/LoadingContext";
 
 const Backups = () => {
   const [backups, setBackups] = useState([]);
   const [showOptions, setShowOptions] = useState(false);
+  const [showFileRestore, setShowFileRestore] = useState(false);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const { startLoading, stopLoading } = useContext(LoadingContext);
   const [message, setMessage] = useState("");
@@ -20,7 +22,16 @@ const Backups = () => {
     if (!selectedPlaylist) {
       setSelectedPlaylist(id);
     } else {
-      setSelectedPlaylist(null);
+      setSelectedPlaylist(null); // this gets hit sometimes when we select a new playlist
+    }
+  };
+
+  const toggleFileRestore = () => {
+    setShowFileRestore(!showFileRestore);
+    if (!showFileRestore) {
+      setShowFileRestore(true);
+    } else {
+      setShowFileRestore(false);
     }
   };
 
@@ -36,6 +47,7 @@ const Backups = () => {
       setMessage("Error deleting backup. Please try again later.");
     } finally {
       stopLoading("overlay");
+      setSelectedPlaylist(null);
       setBackups(backups.filter((b) => b.id !== playlistId));
     }
   };
@@ -55,6 +67,8 @@ const Backups = () => {
       setMessage("Error restoring backup. Please try again later.");
     } finally {
       stopLoading("overlay");
+      setSelectedPlaylist(null);
+      setBackups(backups.filter((b) => b.id !== playlistId));
     }
   };
 
@@ -78,6 +92,7 @@ const Backups = () => {
           <h5>Select a Backup to Remove or Restore</h5>
         </div>
       </section>
+
       <ul className={styles.playlistList}>
         {backups?.length > 0
           ? backups.map((playlist) => (
@@ -107,6 +122,22 @@ const Backups = () => {
       ) : (
         ""
       )}
+      {showFileRestore ? (
+        <FileRestore
+          active={showFileRestore}
+          onClose={() => setShowFileRestore(!showFileRestore)}
+        />
+      ) : (
+        ""
+      )}
+      <div className={styles.alignCenter}>
+        <button
+          className={styles.navButton}
+          onClick={() => toggleFileRestore()}
+        >
+          Restore Playlist From a CSV File
+        </button>
+      </div>
     </div>
   );
 };

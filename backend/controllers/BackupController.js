@@ -113,10 +113,12 @@ async function restorePlaylist(req, res) {
     .status(200)
     .json({ message: "reached restore playlist controller" });
 
-  // To Do: implement restore functionality
-  // first retrieve the playlist data from supabase
-  // then use Supabase/Postgres jsonb_to_recordset - explode jsonb into rows we can read
-  // research what is the best way to do this with maximum efficiency
+  // To Do: req will either contain trackIds (from CSV upload) or playlistContent (from backup restore)
+  // use these to assign a flow variable uploadFromBackup
+  // if uploadFromBackup, then call we need to convert JSONB to trackIds
+  // call spotify API to create a new playlist with `${playlistName} - Restored ${date}`
+  // add tracks to this playlist in batches of 100
+  // return success / failure message
 }
 
 module.exports = {

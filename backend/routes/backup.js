@@ -9,7 +9,9 @@ const {
 } = require("../controllers/BackupController");
 const authMiddleware = require("../middleware/authMiddleware");
 const spotifyAuthMiddleware = require("../middleware/spotifyAuthMiddleware");
-const { rest } = require("../utils/supabase/supabaseClient");
+const restoreBackupMiddleware = require("../middleware/restoreBackupMiddleware");
+const restoreCsvMiddleware = require("../middleware/restoreCsvMiddlware");
+const { rest, auth } = require("../utils/supabase/supabaseClient");
 
 router.get("/backups", authMiddleware, spotifyAuthMiddleware, getMyBackups);
 
@@ -34,6 +36,16 @@ router.post(
   "/restore/:playlistId",
   authMiddleware,
   spotifyAuthMiddleware,
+  restoreBackupMiddleware,
+  restorePlaylist
+);
+
+// POST /api/backup/upload
+router.post(
+  "/upload",
+  authMiddleware,
+  spotifyAuthMiddleware,
+  restoreCsvMiddleware,
   restorePlaylist
 );
 

@@ -26,7 +26,7 @@ const LandingPage = () => {
               Signup
             </button>
             <button
-              className={styles.signupBtnHollow}
+              className={`${styles.signupBtnHollow} ${styles.footerText}`}
               onClick={() => navigate("/login")}
             >
               Login
