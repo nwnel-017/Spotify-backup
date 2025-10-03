@@ -5,6 +5,9 @@ const activeJobs = new Map(); // cron task
 
 async function scheduleBackup(config) {
   const { playlistId } = config;
+  console.log(
+    "Active jobs before scheduling: " + Array.from(activeJobs.keys())
+  );
 
   if (activeJobs.has(playlistId)) {
     console.log(`Weekly backup already scheduled for playlist ${playlistId}`);
@@ -14,9 +17,12 @@ async function scheduleBackup(config) {
   // running initial backup
   try {
     await handleWeeklyBackup(config);
-    console.log("✅ Initial backup completed");
+    console.log("Initial backup completed");
+    console.log(
+      "Active jobs after scheduling: " + Array.from(activeJobs.keys())
+    );
   } catch (err) {
-    console.error("❌ Initial backup failed", err);
+    console.error("Initial backup failed", err);
   }
 
   // Run every Monday at 9 AM
@@ -24,9 +30,9 @@ async function scheduleBackup(config) {
     console.log(`Running weekly backup for playlist ${playlistId}...`);
     try {
       await handleWeeklyBackup(config);
-      console.log("✅ Weekly backup completed");
+      console.log("Weekly backup completed");
     } catch (err) {
-      console.error("❌ Weekly backup failed", err);
+      console.error("Weekly backup failed", err);
     }
   });
   activeJobs.set(playlistId, task);
@@ -34,12 +40,18 @@ async function scheduleBackup(config) {
 }
 
 //cancel a weekly backup
+// found the issue -> this playlistId is the "id" field in supabase - but the playlist keys are spotify's playlistId - playlist_id in supabase
+// fix so that this is called with spotify's playlist_id
 function cancelWeeklyBackup(playlistId) {
+  console.log("playlist id: " + playlistId);
+  // for some reason this is a separate instance of the module then schedule Backup
+  console.log("Active jobs before deleting: " + Array.from(activeJobs.keys()));
   if (activeJobs.has(playlistId)) {
     activeJobs.get(playlistId).stop();
     activeJobs.delete(playlistId);
     console.log(`Canceled weekly backup for playlist ${playlistId}`);
   }
+  console.log("Active jobs after deleting: " + Array.from(activeJobs.keys()));
 }
 
 module.exports = {

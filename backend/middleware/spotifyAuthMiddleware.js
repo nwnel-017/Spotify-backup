@@ -1,7 +1,7 @@
 const axios = require("axios");
 const supabase = require("../utils/supabase/supabaseClient.js");
 const spotifyService = require("../services/spotifyService.js");
-const { access } = require("fs");
+const crypto = require("../utils/crypto.js");
 
 // retrieve user id and retrieve tokens from supabase
 // get user id from decoded JWT
@@ -10,9 +10,6 @@ const { access } = require("fs");
 // attach spotify tokens and supabase user info to req object
 module.exports = async function spotifyAuthMiddleware(req, res, next) {
   const userId = req.supabaseUser;
-
-  // console.log("spotifyAuthMiddleware userId:", userId); // correct
-  // console.log(typeof userId, userId); // string
 
   // Lookup Spotify tokens
   const { data, error } = await supabase
@@ -29,6 +26,15 @@ module.exports = async function spotifyAuthMiddleware(req, res, next) {
   }
   let { access_token, refresh_token, expires_at, spotify_user } = data;
 
+  console.log("access token in midware: " + access_token);
+  console.log("refresh token in midware: " + refresh_token);
+
+  let decryptedRefreshToken = crypto.decrypt(refresh_token);
+  let decryptedAccessToken = crypto.decrypt(access_token);
+
+  console.log("decrypted access token in midware: " + decryptedAccessToken);
+  console.log("decrypted refresh token in midware: " + decryptedRefreshToken);
+
   // Check if access token is expired
   if (new Date() >= new Date(expires_at)) {
     console.log("Access token expired, refreshing...");
@@ -36,22 +42,27 @@ module.exports = async function spotifyAuthMiddleware(req, res, next) {
     // Store the new token in supabase
     try {
       const newToken = await spotifyService.refreshSpotifyToken(
-        refresh_token,
+        decryptedRefreshToken,
         process.env.SPOTIFY_CLIENT_ID,
         process.env.SPOTIFY_CLIENT_SECRET
       );
 
-      access_token = newToken.data.access_token;
+      decryptedAccessToken = newToken.data.access_token;
+      decryptedRefreshToken = newToken.data.refresh_token;
+      access_token = crypto.encrypt(decryptedAccessToken);
+      refresh_token = crypto.encrypt(decryptedRefreshToken);
       const expires_in = newToken.data.expires_in;
 
       // Calculate new expiry time
       expires_at = new Date(Date.now() + expires_in * 1000).toISOString();
 
       // Update tokens in Supabase
+      // tokens in supabase are encrypted
       const { error: updateError } = await supabase
         .from("spotify_users")
         .update({
           access_token: access_token,
+          refresh_token: refresh_token,
           expires_at: expires_at,
           updated_at: new Date().toISOString(),
         })
@@ -69,10 +80,17 @@ module.exports = async function spotifyAuthMiddleware(req, res, next) {
     }
   }
 
+  // const decryptedAccessToken = crypto.decrypt(access_token); // if refreshed - this is not encrypted
+  // const decryptedRefreshToken = crypto.decrypt(refresh_token);
+
+  if (!decryptedAccessToken || !decryptedRefreshToken) {
+    console.log("missing tokens during refresh in middleware");
+    return res.status(401).json({ message: "Error decrypting tokens!" });
+  }
   //Attach Spotify user data to the request
   req.spotifyId = spotify_user;
-  req.spotifyAccessToken = access_token;
-  req.spotifyRefreshToken = refresh_token;
+  req.spotifyAccessToken = decryptedAccessToken;
+  req.spotifyRefreshToken = decryptedRefreshToken;
   req.spotifyTokenExpiry = expires_at;
   next();
 };

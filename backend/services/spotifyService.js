@@ -3,16 +3,13 @@ require("dotenv").config();
 const axios = require("axios");
 const supabase = require("../utils/supabase/supabaseClient");
 const jwt = require("jsonwebtoken");
+const crypto = require("../utils/crypto");
 
 let accessToken = "";
 const tokenUrl = process.env.SPOTIFY_TOKEN_URL;
 const clientId = process.env.SPOTIFY_CLIENT_ID;
 const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 const TOKEN_REFRESH_INTERVAL = 3500 * 1000; // ~58 minutes
-
-async function fetchAccessToken() {
-  // To Do: retrieve supabase logic -> move code from spotifyController.js here
-}
 
 async function setAuthCookies(res, session) {
   try {
@@ -35,49 +32,206 @@ async function setAuthCookies(res, session) {
   }
 }
 
-async function exchangeAndStoreTokens(code) {
-  let tokens;
+async function exchangeCodeForToken(code) {
   try {
-    tokens = await axios.post(
-      tokenUrl,
-      new URLSearchParams({
-        grant_type: "authorization_code",
-        code: code,
-        redirect_uri: `${process.env.REDIRECT_URI}`, //not defined
-      }).toString(),
-      {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Authorization: `Basic ${authString}`,
-        },
-      }
-    );
-  } catch (error) {
-    console.error(
-      "Error exchanging code for token:",
-      error.response?.data || error.message
-    );
-    throw error;
-  }
-
-  const { access_token, refresh_token, expires_in } = tokens.data;
-
-  //store tokens in supabase
-  try {
-    const response = await supabase.from("spotify_users").upsert(
-      {
-        user_id: userId,
-        access_token,
-        refresh_token,
-        expires_at: new Date(Date.now() + expires_in * 1000).toISOString(),
+    const tokenRes = await fetch(`${process.env.SPOTIFY_TOKEN_URL}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization:
+          "Basic " +
+          Buffer.from(
+            process.env.SPOTIFY_CLIENT_ID +
+              ":" +
+              process.env.SPOTIFY_CLIENT_SECRET
+          ).toString("base64"),
       },
-      { onConflict: ["user_id"] } // ensures update if user_id exists
-    );
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: process.env.REDIRECT_URI,
+      }),
+    });
+
+    const tokenData = await tokenRes.json(); // spotify access tokens
+
+    const accessToken = tokenData.access_token;
+    const refreshToken = tokenData.refresh_token;
+
+    if (!accessToken || !refreshToken) {
+      throw new Error("Tokens came back empty from spotify!");
+    }
+
+    // 2. encrypt the tokens
+    // const encryptedAccessToken = crypto.encrypt(accessToken);
+    // const encryptedRefreshToken = crypto.encrypt(refreshToken);
+
+    // if (!encryptedAccessToken || !encryptedRefreshToken) {
+    //   throw new Error("Failed to encrypt tokens");
+    // }
+
+    // 3. retrieve spotify profile to get user id
+    let spotifyProfile;
+    try {
+      const profileRes = await fetch("https://api.spotify.com/v1/me", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      spotifyProfile = await profileRes.json();
+    } catch (error) {
+      console.error("Error fetching Spotify profile:", error);
+      return res.status(500).send("Failed to fetch Spotify profile");
+    }
+
+    const spotifyId = spotifyProfile.id;
+
+    // To Do: store the encrypted tokens
+    // await supabase.from("spotify_users").upsert({
+    //   user_id: userId,
+    //   spotify_id: spotifyId,
+    //   access_token: tokenData.access_token,
+    //   refresh_token: tokenData.refresh_token,
+    // });
+
+    return {
+      // encryptedAccessToken,
+      // encryptedRefreshToken,
+      accessToken,
+      refreshToken,
+      spotifyId,
+      expiresAt: new Date(
+        Date.now() + tokenData.expires_in * 1000
+      ).toISOString(),
+    };
   } catch (error) {
-    console.error("Error saving Spotify tokens to supabase:", error);
-    throw new Error("Failed to save Spotify tokens to server");
+    console.log("Error exchanging and storing tokens: " + error);
   }
-  return { access_token, refresh_token, expires_in };
+}
+
+async function handleOAuth(code, parsedState) {
+  const tokens = await exchangeCodeForToken(code); // returns plaintext tokens
+  const spotifyId = await getSpotifyId(tokens.accessToken); // retrieve spotify id
+
+  if (!tokens.accessToken || !tokens.refreshToken || !spotifyId) {
+    console.log("missing tokens or spotify id in handleOAuth!");
+    throw new Error("Missing tokens!");
+  }
+
+  if (parsedState.flow === "login") {
+    return loginWithSpotify(spotifyId, tokens); // searches for existing user - upserts tokens - logs in
+  } else if (parsedState.flow === "link") {
+    return linkSpotifyAccount(parsedState.nonce, spotifyId, tokens);
+  } else {
+    throw new Error("Invalid flow");
+  }
+}
+
+async function loginWithSpotify(spotifyId, tokens) {
+  // Find existing supabase user by spotifyId
+
+  const { accessToken, refreshToken, expiresAt } = tokens;
+
+  if (!accessToken || !refreshToken || !expiresAt) {
+    throw new Error("Missing tokens in loginWithSpotify!");
+  }
+
+  const { data: existing, error: findError } = await supabase
+    .from("spotify_users")
+    .select("user_id")
+    .eq("spotify_user", spotifyId)
+    .single();
+
+  if (findError || !existing) {
+    throw new Error("No Supabase user linked to this Spotify account");
+  }
+
+  const encryptedAccess = crypto.encrypt(accessToken);
+  const encryptedRefresh = crypto.encrypt(refreshToken);
+
+  // Upsert new tokens
+  const { error: upsertError } = await supabase.from("spotify_users").upsert(
+    {
+      user_id: existing.user_id,
+      spotify_user: spotifyId,
+      access_token: encryptedAccess,
+      refresh_token: encryptedRefresh,
+      expires_at: expiresAt.toISOString(),
+    },
+    { onConflict: ["user_id"] }
+  );
+
+  if (upsertError) throw upsertError;
+
+  // Create Supabase session (admin privilege required)
+  const { data: sessionData, error: sessionError } =
+    await supabase.auth.admin.createSession({
+      user_id: existing.user_id,
+    });
+
+  if (sessionError) throw sessionError;
+
+  return { session: sessionData.session };
+}
+
+async function linkSpotifyAccount(nonce, spotifyId, tokens) {
+  const { accessToken, refreshToken, expiresAt } = tokens;
+
+  if (!accessToken || !refreshToken || !expiresAt) {
+    throw new Error("Missing tokens in loginWithSpotify!");
+  }
+
+  // Verify nonce
+  const { data: linkRecord, error: linkError } = await supabase
+    .from("spotify_link_nonces")
+    .select("*")
+    .eq("nonce", nonce)
+    .single();
+
+  if (linkError || !linkRecord) {
+    throw new Error("Invalid or expired link request");
+  }
+
+  if (new Date(linkRecord.expires_at) < new Date()) {
+    throw new Error("Link request has expired");
+  }
+
+  // Clean up nonce
+  await supabase.from("spotify_link_nonces").delete().eq("nonce", nonce);
+
+  const encryptedAccess = crypto.encrypt(tokens.accessToken);
+  const encryptedRefresh = crypto.encrypt(tokens.refreshToken);
+
+  // Store tokens against the Supabase user
+  const { error: upsertError } = await supabase.from("spotify_users").upsert(
+    {
+      user_id: linkRecord.user_id,
+      spotify_user: spotifyId,
+      access_token: encryptedAccess,
+      refresh_token: encryptedRefresh,
+      expires_at: expiresAt,
+    },
+    { onConflict: ["user_id"] }
+  );
+
+  if (upsertError) throw upsertError;
+
+  return { success: true };
+}
+
+async function getSpotifyId(accessToken) {
+  const profileRes = await fetch("https://api.spotify.com/v1/me", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!profileRes.ok) {
+    const err = await profileRes.json();
+    throw new Error("Failed to fetch Spotify profile: " + JSON.stringify(err));
+  }
+
+  const profile = await profileRes.json();
+  if (!profile.id) {
+    throw new Error("Error retrieving id from spotify profile!");
+  }
+  return profile.id;
 }
 
 // refreshes token for supabase user
@@ -98,6 +252,12 @@ async function refreshAccessToken(refreshToken) {
 // refresh token for spotify api
 async function refreshSpotifyToken(refreshToken, clientId, clientSecret) {
   console.log("Reached refreshSpotifyToken in service");
+
+  if (!refreshToken || !clientId || !clientSecret) {
+    throw new Error("Missing parameters!");
+  }
+
+  // const decryptedRefreshToken = crypto.decrypt(refreshToken);
 
   const authString = Buffer.from(`${clientId}:${clientSecret}`).toString(
     "base64"
@@ -219,7 +379,8 @@ async function getProfileInfo(accessToken) {
 
 module.exports = {
   refreshAccessToken,
-  exchangeAndStoreTokens,
+  exchangeCodeForToken,
+  handleOAuth,
   getPlaylistTracks,
   getPlaylists,
   getProfileInfo,

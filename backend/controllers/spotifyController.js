@@ -14,8 +14,6 @@ exports.getSession = async (req, res) => {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  // console.log("Session user:", user); // getting valid session info
-
   return res.status(200).json({ user });
 };
 
@@ -39,8 +37,6 @@ exports.login = async (req, res) => {
     spotifyService.setAuthCookies(res, data.session);
     console.log("cookies successfully set");
     return res.status(200).json({ message: "Login successful" });
-
-    // return res.redirect(`${process.env.CLIENT_URL}/home`);
   } catch (error) {
     console.error("Login error:", error);
     return res.status(500).json({ error: "Internal server error" });
@@ -58,6 +54,7 @@ exports.search = async (req, res) => {
 };
 
 exports.refreshToken = async (req, res) => {
+  console.log("reached refresh token controller");
   try {
     const refreshToken = res.cookies["sb-refresh-token"];
     if (!refreshToken) {
@@ -73,12 +70,7 @@ exports.refreshToken = async (req, res) => {
   }
 };
 
-// exports.refreshSpotifyToken = async (req, res) => {
-//   console.log("Reached refreshSpotifyToken in controller");
-// };
-
 exports.connectSpotify = async (req, res) => {
-  console.log("reached backend connectSpotify");
   const isLinkFlow = !!req.supabaseUser;
   const scope =
     "playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public";
@@ -142,126 +134,142 @@ exports.handleCallback = async (req, res) => {
     return res.status(400).send("Invalid state");
   }
 
-  // 1. exchange code for token // move to spotifyService
-  const tokenRes = await fetch(`${process.env.SPOTIFY_TOKEN_URL}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Authorization:
-        "Basic " +
-        Buffer.from(
-          process.env.SPOTIFY_CLIENT_ID +
-            ":" +
-            process.env.SPOTIFY_CLIENT_SECRET
-        ).toString("base64"),
-    },
-    body: new URLSearchParams({
-      grant_type: "authorization_code",
-      code,
-      redirect_uri: process.env.REDIRECT_URI,
-    }),
-  });
+  try {
+    const result = await spotifyService.handleOAuth(code, parsedState);
 
-  const tokenData = await tokenRes.json(); // spotify access tokens
+    if (parsedState.flow === "login") {
+      spotifyService.setAuthCookies(res, result.session);
+    }
 
-  if (!tokenData.access_token) {
-    return res.status(400).send("Failed to get spotify access tokens");
+    return res.redirect(`${process.env.CLIENT_URL}/home`);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).send("OAuth callback failed");
   }
+
+  // 1. exchange code for token // move to spotifyService
+  // const tokenRes = await fetch(`${process.env.SPOTIFY_TOKEN_URL}`, {
+  //   method: "POST",
+  //   headers: {
+  //     "Content-Type": "application/x-www-form-urlencoded",
+  //     Authorization:
+  //       "Basic " +
+  //       Buffer.from(
+  //         process.env.SPOTIFY_CLIENT_ID +
+  //           ":" +
+  //           process.env.SPOTIFY_CLIENT_SECRET
+  //       ).toString("base64"),
+  //   },
+  //   body: new URLSearchParams({
+  //     grant_type: "authorization_code",
+  //     code,
+  //     redirect_uri: process.env.REDIRECT_URI,
+  //   }),
+  // });
+
+  // const tokenData = await tokenRes.json(); // spotify access tokens
+  // const { encryptedAccessToken, encryptedRefreshToken, spotifyId, expiresAt } =
+  //   await spotifyService.exchangeCodeForToken(code); // retrieves tokens from spotify api, encrypts, and stores in db
+
+  // if (!encryptedAccessToken || !encryptedRefreshToken || !spotifyId) {
+  //   return res.status(400).send("Failed to get spotify access tokens");
+  // }
+
+  // console.log("encrypted accessToken: " + encryptedAccessToken);
+  // console.log("encrypted refreshToken: " + encryptedRefreshToken);
+  // console.log("spotifyId: " + spotifyId); // correct up to here
 
   // 2. fetch spotify user to get spotifyId
-  let spotifyProfile;
-  try {
-    const profileRes = await fetch("https://api.spotify.com/v1/me", {
-      headers: { Authorization: `Bearer ${tokenData.access_token}` },
-    });
-    spotifyProfile = await profileRes.json();
-  } catch (error) {
-    console.error("Error fetching Spotify profile:", error);
-    return res.status(500).send("Failed to fetch Spotify profile");
-  }
+  // let spotifyProfile;
+  // try {
+  //   const profileRes = await fetch("https://api.spotify.com/v1/me", {
+  //     headers: { Authorization: `Bearer ${tokenData.access_token}` },
+  //   });
+  //   spotifyProfile = await profileRes.json();
+  // } catch (error) {
+  //   console.error("Error fetching Spotify profile:", error);
+  //   return res.status(500).send("Failed to fetch Spotify profile");
+  // }
 
-  const spotifyId = spotifyProfile.id;
+  // const spotifyId = spotifyProfile.id;
 
   // user is logging in to existing account through spotify
   // To do -> add a spotifyId column to table to track the ID of the account
-  if (parsedState.flow === "login") {
-    try {
-      const { data: existing } = await supabase //get userId from spotifyId
-        .from("spotify_users")
-        .select("user_id")
-        .eq("spotify_user", spotifyId)
-        .single();
+  // if (parsedState.flow === "login") {
+  //   try {
+  //     const { data: existing } = await supabase //get userId from spotifyId
+  //       .from("spotify_users")
+  //       .select("user_id")
+  //       .eq("spotify_user", spotifyId)
+  //       .single();
 
-      let userId;
+  //     let userId;
 
-      console.log(existing); // coming back as null
+  //     if (existing) {
+  //       userId = existing.user_id;
+  //     } else {
+  //       return res.status(500).send("User has not created an account!");
+  //     }
 
-      if (existing) {
-        userId = existing.user_id;
-      } else {
-        return res.status(500).send("User has not created an account!");
-      }
+  //     // Upsert tokens
+  //     await supabase.from("spotify_users").upsert({
+  //       user_id: userId,
+  //       spotify_id: spotifyId,
+  //       access_token: tokenData.access_token,
+  //       refresh_token: tokenData.refresh_token,
+  //     });
 
-      // Upsert tokens
-      await supabase.from("spotify_users").upsert({
-        user_id: userId,
-        spotify_id: spotifyId,
-        access_token: tokenData.access_token,
-        refresh_token: tokenData.refresh_token,
-      });
+  //     // To Do -> sign in with supabase and set cookies
+  //     const { data, error } = await supabase.auth.admin.createSession({
+  //       user_id: userId,
+  //     });
 
-      // To Do -> sign in with supabase and set cookies
-      // this isnt a function - figure out another way
-      const { data, error } = await supabase.auth.admin.createSession({
-        user_id: userId,
-      });
+  //     spotifyService.setAuthCookies(res, data.session);
+  //   } catch (error) {
+  //     console.error("Error during login flow:", error);
+  //     return res.status(500).send("Database error during login process");
+  //   }
+  // } else if (parsedState.flow === "link") {
+  //   console.log("entered link flow in callback");
+  //   const nonce = parsedState.nonce;
 
-      spotifyService.setAuthCookies(res, data.session);
-    } catch (error) {
-      console.error("Error during login flow:", error);
-      return res.status(500).send("Database error during login process");
-    }
-  } else if (parsedState.flow === "link") {
-    console.log("entered link flow in callback");
-    const nonce = parsedState.nonce;
+  //   if (!nonce) {
+  //     return res.status(400).send("Invalid state flow");
+  //   }
+  //   const linkRecord = await supabase
+  //     .from("spotify_link_nonces")
+  //     .select("*")
+  //     .eq("nonce", nonce)
+  //     .single();
 
-    if (!nonce) {
-      return res.status(400).send("Invalid state flow");
-    }
-    const linkRecord = await supabase
-      .from("spotify_link_nonces")
-      .select("*")
-      .eq("nonce", nonce)
-      .single();
+  //   if (!linkRecord || new Date(linkRecord.data.expires_at) < new Date()) {
+  //     return res.status(400).send("Invalid or expired link request");
+  //   }
 
-    if (!linkRecord || new Date(linkRecord.data.expires_at) < new Date()) {
-      return res.status(400).send("Invalid or expired link request");
-    }
+  //   await supabase.from("spotify_link_nonces").delete().eq("nonce", nonce);
 
-    await supabase.from("spotify_link_nonces").delete().eq("nonce", nonce);
+  //   const { data, error } = await supabase.from("spotify_users").upsert(
+  //     {
+  //       user_id: linkRecord.data.user_id, // has a value
+  //       spotify_user: spotifyId, // has a value
+  //       access_token: tokenData.access_token, // has a value
+  //       refresh_token: tokenData.refresh_token, // has a value
+  //       expires_at: new Date(
+  //         Date.now() + tokenData.expires_in * 1000
+  //       ).toISOString(),
+  //     },
+  //     { onConflict: ["user_id"] }
+  //   );
+  //   if (error) {
+  //     console.error("Error upserting spotify_users:", error);
+  //     return res.status(500).send("Database error during linking process");
+  //   }
+  // } else {
+  //   return res.status(400).send("Invalid state flow");
+  // }
 
-    const { data, error } = await supabase.from("spotify_users").upsert(
-      {
-        user_id: linkRecord.data.user_id, // has a value
-        spotify_user: spotifyId, // has a value
-        access_token: tokenData.access_token, // has a value
-        refresh_token: tokenData.refresh_token, // has a value
-        expires_at: new Date(
-          Date.now() + tokenData.expires_in * 1000
-        ).toISOString(),
-      },
-      { onConflict: ["user_id"] }
-    );
-    if (error) {
-      console.error("Error upserting spotify_users:", error);
-      return res.status(500).send("Database error during linking process");
-    }
-  } else {
-    return res.status(400).send("Invalid state flow");
-  }
-
-  console.log("Spotify account logged in successfully");
-  return res.redirect(`${process.env.CLIENT_URL}/home`);
+  // console.log("Spotify account logged in successfully");
+  // return res.redirect(`${process.env.CLIENT_URL}/home`);
   // return res.status(200).send("Spotify account connected successfully");
 };
 

@@ -68,7 +68,7 @@ const Backups = () => {
     } finally {
       stopLoading("overlay");
       setSelectedPlaylist(null);
-      setBackups(backups.filter((b) => b.id !== playlistId));
+      // setBackups(backups.filter((b) => b.id !== playlistId));
     }
   };
 

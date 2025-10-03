@@ -1,5 +1,4 @@
 const {
-  handleWeeklyBackup,
   handleOneTimeBackup,
   retrieveBackups,
   removeBackup,
@@ -113,34 +112,21 @@ async function restorePlaylist(req, res) {
 
   const accessToken = req.spotifyAccessToken;
   const userId = req.spotifyId;
+  const trackIds = req.trackIds;
+  const playlistName = req.playlistName;
 
-  console.log("access token: " + accessToken);
+  console.log("access token: " + accessToken); // undefined
   console.log("spotify user id: " + userId); // undefined
+  console.log("playlist name: " + playlistName);
+  console.log("track ids: " + trackIds);
 
   if (!accessToken || !userId) {
     return res.status(401).json({ message: "Missing spotify authorization!" });
   }
 
-  const restoreFromDb = !req.trackIds;
-  let trackIds;
-  let playlistName;
-
-  if (restoreFromDb) {
-    // To Do: if restoreFromDb - grab jsonb and playlist name from suapabse
-    // convert jsonb to track ids
-  } else {
-    trackIds = req.trackIds;
-    playlistName = req.playlistName;
-  }
-
-  // if uploadFromBackup, then call we need to convert JSONB to trackIds
-  // call spotify API to create a new playlist with `${playlistName} - Restored ${date}`
-  // add tracks to this playlist in batches of 100
-  // return success / failure message
   console.log("trackIds : " + trackIds);
   console.log("playlist name: " + playlistName);
   if (!trackIds || !playlistName) {
-    //both undefined
     console.log("Missing params!");
     return res.status(500).json({
       message: "Error - missing track Ids or playlist name in controller!",
