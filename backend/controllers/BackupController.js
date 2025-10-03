@@ -3,7 +3,7 @@ const {
   handleOneTimeBackup,
   retrieveBackups,
   removeBackup,
-  createSpotifyPlaylist,
+  createAndFillPlaylist,
 } = require("../services/backupService");
 
 const {
@@ -110,10 +110,18 @@ async function deleteBackup(req, res) {
 
 async function restorePlaylist(req, res) {
   console.log("reached restore playlist controller"); // successfully reached
-  // console.log("CSV contents:", req.trackIds); // reached correctly
+
+  const accessToken = req.spotifyAccessToken;
+  const userId = req.spotifyId;
+
+  console.log("access token: " + accessToken);
+  console.log("spotify user id: " + userId); // undefined
+
+  if (!accessToken || !userId) {
+    return res.status(401).json({ message: "Missing spotify authorization!" });
+  }
 
   const restoreFromDb = !req.trackIds;
-  console.log(restoreFromDb);
   let trackIds;
   let playlistName;
 
@@ -140,7 +148,7 @@ async function restorePlaylist(req, res) {
   }
 
   try {
-    await createSpotifyPlaylist(playlistName, trackIds);
+    await createAndFillPlaylist(accessToken, userId, playlistName, trackIds);
     return res.status(200).json({ message: "Sucessfully restored playlist" });
   } catch (error) {
     console.log("Error in Backup Controller: " + error);

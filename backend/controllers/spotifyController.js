@@ -80,7 +80,8 @@ exports.refreshToken = async (req, res) => {
 exports.connectSpotify = async (req, res) => {
   console.log("reached backend connectSpotify");
   const isLinkFlow = !!req.supabaseUser;
-  const scope = "playlist-read-private playlist-read-collaborative";
+  const scope =
+    "playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public";
   let statePayload;
 
   if (isLinkFlow) {

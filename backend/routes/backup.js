@@ -45,10 +45,6 @@ router.post(
   "/upload",
   authMiddleware,
   spotifyAuthMiddleware,
-  (req, res, next) => {
-    console.log("Reached router before multer"); // <-- see if this prints
-    next();
-  },
   restoreCsvMiddleware,
   restorePlaylist
 );

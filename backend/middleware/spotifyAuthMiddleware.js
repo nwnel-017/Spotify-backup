@@ -17,7 +17,7 @@ module.exports = async function spotifyAuthMiddleware(req, res, next) {
   // Lookup Spotify tokens
   const { data, error } = await supabase
     .from("spotify_users")
-    .select("access_token, refresh_token, expires_at")
+    .select("access_token, refresh_token, expires_at, spotify_user")
     .eq("user_id", userId)
     .single();
 
@@ -27,7 +27,7 @@ module.exports = async function spotifyAuthMiddleware(req, res, next) {
     console.error("Error fetching Spotify tokens:", error);
     return res.status(403).json({ error: "Spotify not linked" });
   }
-  let { access_token, refresh_token, expires_at } = data;
+  let { access_token, refresh_token, expires_at, spotify_user } = data;
 
   // Check if access token is expired
   if (new Date() >= new Date(expires_at)) {
@@ -70,6 +70,7 @@ module.exports = async function spotifyAuthMiddleware(req, res, next) {
   }
 
   //Attach Spotify user data to the request
+  req.spotifyId = spotify_user;
   req.spotifyAccessToken = access_token;
   req.spotifyRefreshToken = refresh_token;
   req.spotifyTokenExpiry = expires_at;
