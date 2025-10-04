@@ -4,7 +4,7 @@ const { handleWeeklyBackup } = require("../services/backupService.js");
 const activeJobs = new Map(); // cron task
 
 async function scheduleBackup(config) {
-  const { playlistId } = config;
+  const { playlistId } = config; // the playlist id needs to be playlist id in spotify
   console.log(
     "Active jobs before scheduling: " + Array.from(activeJobs.keys())
   );

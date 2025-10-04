@@ -16,7 +16,7 @@ module.exports = restoreBackupMiddleware = async (req, res, next) => {
       .from("weekly_backups")
       .select("playlist_id, playlist_name, backup_data")
       .eq("user_id", userId)
-      .eq("id", playlistId)
+      .eq("playlist_id", playlistId)
       .single();
 
     if (error) {

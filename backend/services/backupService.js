@@ -53,9 +53,6 @@ async function handleWeeklyBackup({
     );
     const currentHash = generateHash(currentTracks);
 
-    console.log("Current hash:", currentHash);
-    console.log("user:", supabaseUser);
-
     // Get last backup from Supabase
     const { data: lastBackup, error: fetchError } = await supabase
       .from("weekly_backups")
@@ -134,7 +131,7 @@ async function removeBackup(playlistId) {
   const { error } = await supabase
     .from("weekly_backups")
     .delete()
-    .eq("id", playlistId);
+    .eq("playlist_id", playlistId);
 
   if (error) {
     console.error("Error deleting backup from Supabase:", error);

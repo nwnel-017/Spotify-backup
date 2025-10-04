@@ -19,6 +19,7 @@ const Backups = () => {
 
   const toggleOptions = (id) => {
     setShowOptions(!showOptions);
+    console.log("selected playlist: " + id);
     if (!selectedPlaylist) {
       setSelectedPlaylist(id);
     } else {
@@ -37,7 +38,6 @@ const Backups = () => {
 
   const removeBackup = async () => {
     const playlistId = selectedPlaylist;
-    console.log("Removing backup with id: " + playlistId);
     try {
       startLoading("overlay");
       const res = await deleteBackup(playlistId);
@@ -48,7 +48,7 @@ const Backups = () => {
     } finally {
       stopLoading("overlay");
       setSelectedPlaylist(null);
-      setBackups(backups.filter((b) => b.id !== playlistId));
+      setBackups(backups.filter((b) => b.playlist_id !== playlistId));
     }
   };
 
@@ -99,7 +99,7 @@ const Backups = () => {
               <li
                 key={playlist.id}
                 className={styles.playlistItem}
-                onClick={() => toggleOptions(playlist.id)}
+                onClick={() => toggleOptions(playlist.playlist_id)}
               >
                 <div className={styles.playlistTitle}>
                   {playlist.playlist_name}
