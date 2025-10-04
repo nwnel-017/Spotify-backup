@@ -68,7 +68,6 @@ async function handleWeeklyBackup({
       throw fetchError;
     }
 
-    console.log("last backup:", lastBackup); //last backup is null
     // If hash matches last backup, skip insert
     if (lastBackup && lastBackup.hash === currentHash) {
       //not sure if this ever gets hit
@@ -95,12 +94,12 @@ async function handleWeeklyBackup({
       );
 
     if (insertError) throw insertError;
-    console.log(`✅ New backup inserted for playlist ${playlistName}`);
+    console.log(`New backup inserted for playlist ${playlistName}`);
   } catch (error) {
     console.error("Error during weekly backup:", error);
   }
 
-  console.log("✅ Weekly backup saved");
+  console.log("Weekly backup saved");
 }
 
 async function handleOneTimeBackup({ accessToken, supabaseUser, playlistId }) {
@@ -123,7 +122,6 @@ async function handleOneTimeBackup({ accessToken, supabaseUser, playlistId }) {
 }
 
 async function removeBackup(playlistId) {
-  console.log("Hello from backupService.removeBackup");
   if (!playlistId) {
     throw new Error("No backup ID provided to deleteBackup");
   }
@@ -140,10 +138,6 @@ async function removeBackup(playlistId) {
 }
 
 async function retrieveBackups({ accessToken, supabaseUser }) {
-  console.log(
-    "hit backupService.sj. attempting to retrieve backups from supabase"
-  );
-
   const { data, error } = await supabase.from("weekly_backups").select("*");
 
   if (error) {
@@ -222,9 +216,6 @@ async function addTracksToPlaylist(accessToken, playlistId, trackIds) {
   if (!accessToken || !playlistId || !trackIds) {
     throw new Error("Error restoring tracks to the playlist - missing params!");
   }
-
-  console.log("restoring tracks to your playlist...");
-
   const batchSize = 100; // max amount of songs spotify allows adding
 
   for (let i = 0; i < trackIds.length; i += batchSize) {
@@ -243,12 +234,6 @@ async function addTracksToPlaylist(accessToken, playlistId, trackIds) {
             "Content-Type": "application/json",
           },
         }
-      );
-
-      console.log(
-        `Added batch ${i / batchSize + 1} of ${Math.ceil(
-          trackIds.length / batchSize
-        )}`
       );
     } catch (error) {
       console.error(

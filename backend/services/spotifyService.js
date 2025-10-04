@@ -62,14 +62,6 @@ async function exchangeCodeForToken(code) {
       throw new Error("Tokens came back empty from spotify!");
     }
 
-    // 2. encrypt the tokens
-    // const encryptedAccessToken = crypto.encrypt(accessToken);
-    // const encryptedRefreshToken = crypto.encrypt(refreshToken);
-
-    // if (!encryptedAccessToken || !encryptedRefreshToken) {
-    //   throw new Error("Failed to encrypt tokens");
-    // }
-
     // 3. retrieve spotify profile to get user id
     let spotifyProfile;
     try {
@@ -84,17 +76,7 @@ async function exchangeCodeForToken(code) {
 
     const spotifyId = spotifyProfile.id;
 
-    // To Do: store the encrypted tokens
-    // await supabase.from("spotify_users").upsert({
-    //   user_id: userId,
-    //   spotify_id: spotifyId,
-    //   access_token: tokenData.access_token,
-    //   refresh_token: tokenData.refresh_token,
-    // });
-
     return {
-      // encryptedAccessToken,
-      // encryptedRefreshToken,
       accessToken,
       refreshToken,
       spotifyId,
@@ -277,7 +259,6 @@ async function refreshSpotifyToken(refreshToken, clientId, clientSecret) {
         },
       }
     );
-    console.log("response from refreshing token in service: " + response.data);
 
     // accessToken = response.data.access_token;
     return response; // Contains new access_token and possibly a new refresh_token
@@ -321,7 +302,6 @@ async function getPlaylistTracks(accessToken, playlistId) {
       offset += limit;
     }
 
-    console.log(`Retrieved ${allTracks.length} total tracks from Spotify`);
     return allTracks;
   } catch (error) {
     console.error(

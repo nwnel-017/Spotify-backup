@@ -9,7 +9,6 @@ const spotifyService = require("../services/spotifyService");
 // verify both tokens exist
 // attach spotify tokens and supabase user info to req object
 module.exports = async function (req, res, next) {
-  console.log("entering authmiddleware");
   const accessToken = req.cookies["sb-access-token"];
   const refreshToken = req.cookies["sb-refresh-token"];
 
@@ -33,8 +32,6 @@ module.exports = async function (req, res, next) {
   }
 
   req.supabaseUser = decoded.payload.sub;
-
-  console.log("passed authMiddleware");
 
   next();
 };

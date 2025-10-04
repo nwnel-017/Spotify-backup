@@ -7,12 +7,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpotify } from "@fortawesome/free-brands-svg-icons";
 import { startSpotifyAuth, loginUser } from "../services/SpotifyService";
 import { validateInput } from "./../utils/validator";
+import { useAuth } from "../context/AuthContext";
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { getUser } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -32,8 +34,6 @@ const LoginPage = () => {
       return;
     }
 
-    console.log("Logging in with", { email, password });
-
     try {
       const res = await loginUser(email, password);
       console.log("Login successful");
@@ -42,6 +42,7 @@ const LoginPage = () => {
         console.log("Login failed with status", res.status);
         return;
       }
+      await getUser();
       navigate("/home");
     } catch (error) {
       console.error("Login error:", error);

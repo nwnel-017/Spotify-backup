@@ -5,9 +5,6 @@ const activeJobs = new Map(); // cron task
 
 async function scheduleBackup(config) {
   const { playlistId } = config; // the playlist id needs to be playlist id in spotify
-  console.log(
-    "Active jobs before scheduling: " + Array.from(activeJobs.keys())
-  );
 
   if (activeJobs.has(playlistId)) {
     console.log(`Weekly backup already scheduled for playlist ${playlistId}`);
@@ -18,9 +15,6 @@ async function scheduleBackup(config) {
   try {
     await handleWeeklyBackup(config);
     console.log("Initial backup completed");
-    console.log(
-      "Active jobs after scheduling: " + Array.from(activeJobs.keys())
-    );
   } catch (err) {
     console.error("Initial backup failed", err);
   }
@@ -36,22 +30,18 @@ async function scheduleBackup(config) {
     }
   });
   activeJobs.set(playlistId, task);
-  console.log(`Scheduled weekly backup for playlist ${playlistId}`);
 }
 
 //cancel a weekly backup
 // found the issue -> this playlistId is the "id" field in supabase - but the playlist keys are spotify's playlistId - playlist_id in supabase
 // fix so that this is called with spotify's playlist_id
 function cancelWeeklyBackup(playlistId) {
-  console.log("playlist id: " + playlistId);
   // for some reason this is a separate instance of the module then schedule Backup
-  console.log("Active jobs before deleting: " + Array.from(activeJobs.keys()));
   if (activeJobs.has(playlistId)) {
     activeJobs.get(playlistId).stop();
     activeJobs.delete(playlistId);
     console.log(`Canceled weekly backup for playlist ${playlistId}`);
   }
-  console.log("Active jobs after deleting: " + Array.from(activeJobs.keys()));
 }
 
 module.exports = {

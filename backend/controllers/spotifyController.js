@@ -19,7 +19,6 @@ exports.getSession = async (req, res) => {
 
 exports.login = async (req, res) => {
   const { email, password } = req.body;
-  console.log("Login attempt for", email);
 
   if (!email || !password) {
     return res.status(400).json({ error: "Email and password are required" });
@@ -33,9 +32,7 @@ exports.login = async (req, res) => {
     if (error) {
       return res.status(401).json({ error: error.message });
     }
-    console.log("setting cookies");
     spotifyService.setAuthCookies(res, data.session);
-    console.log("cookies successfully set");
     return res.status(200).json({ message: "Login successful" });
   } catch (error) {
     console.error("Login error:", error);
@@ -112,7 +109,6 @@ exports.connectSpotify = async (req, res) => {
   });
 
   const url = `https://accounts.spotify.com/authorize?${queryParams}`;
-  console.log("Spotify auth URL: " + url);
   res.json({ url }); //send url back to frontend
 };
 
@@ -146,131 +142,6 @@ exports.handleCallback = async (req, res) => {
     console.error(err);
     return res.status(500).send("OAuth callback failed");
   }
-
-  // 1. exchange code for token // move to spotifyService
-  // const tokenRes = await fetch(`${process.env.SPOTIFY_TOKEN_URL}`, {
-  //   method: "POST",
-  //   headers: {
-  //     "Content-Type": "application/x-www-form-urlencoded",
-  //     Authorization:
-  //       "Basic " +
-  //       Buffer.from(
-  //         process.env.SPOTIFY_CLIENT_ID +
-  //           ":" +
-  //           process.env.SPOTIFY_CLIENT_SECRET
-  //       ).toString("base64"),
-  //   },
-  //   body: new URLSearchParams({
-  //     grant_type: "authorization_code",
-  //     code,
-  //     redirect_uri: process.env.REDIRECT_URI,
-  //   }),
-  // });
-
-  // const tokenData = await tokenRes.json(); // spotify access tokens
-  // const { encryptedAccessToken, encryptedRefreshToken, spotifyId, expiresAt } =
-  //   await spotifyService.exchangeCodeForToken(code); // retrieves tokens from spotify api, encrypts, and stores in db
-
-  // if (!encryptedAccessToken || !encryptedRefreshToken || !spotifyId) {
-  //   return res.status(400).send("Failed to get spotify access tokens");
-  // }
-
-  // console.log("encrypted accessToken: " + encryptedAccessToken);
-  // console.log("encrypted refreshToken: " + encryptedRefreshToken);
-  // console.log("spotifyId: " + spotifyId); // correct up to here
-
-  // 2. fetch spotify user to get spotifyId
-  // let spotifyProfile;
-  // try {
-  //   const profileRes = await fetch("https://api.spotify.com/v1/me", {
-  //     headers: { Authorization: `Bearer ${tokenData.access_token}` },
-  //   });
-  //   spotifyProfile = await profileRes.json();
-  // } catch (error) {
-  //   console.error("Error fetching Spotify profile:", error);
-  //   return res.status(500).send("Failed to fetch Spotify profile");
-  // }
-
-  // const spotifyId = spotifyProfile.id;
-
-  // user is logging in to existing account through spotify
-  // To do -> add a spotifyId column to table to track the ID of the account
-  // if (parsedState.flow === "login") {
-  //   try {
-  //     const { data: existing } = await supabase //get userId from spotifyId
-  //       .from("spotify_users")
-  //       .select("user_id")
-  //       .eq("spotify_user", spotifyId)
-  //       .single();
-
-  //     let userId;
-
-  //     if (existing) {
-  //       userId = existing.user_id;
-  //     } else {
-  //       return res.status(500).send("User has not created an account!");
-  //     }
-
-  //     // Upsert tokens
-  //     await supabase.from("spotify_users").upsert({
-  //       user_id: userId,
-  //       spotify_id: spotifyId,
-  //       access_token: tokenData.access_token,
-  //       refresh_token: tokenData.refresh_token,
-  //     });
-
-  //     // To Do -> sign in with supabase and set cookies
-  //     const { data, error } = await supabase.auth.admin.createSession({
-  //       user_id: userId,
-  //     });
-
-  //     spotifyService.setAuthCookies(res, data.session);
-  //   } catch (error) {
-  //     console.error("Error during login flow:", error);
-  //     return res.status(500).send("Database error during login process");
-  //   }
-  // } else if (parsedState.flow === "link") {
-  //   console.log("entered link flow in callback");
-  //   const nonce = parsedState.nonce;
-
-  //   if (!nonce) {
-  //     return res.status(400).send("Invalid state flow");
-  //   }
-  //   const linkRecord = await supabase
-  //     .from("spotify_link_nonces")
-  //     .select("*")
-  //     .eq("nonce", nonce)
-  //     .single();
-
-  //   if (!linkRecord || new Date(linkRecord.data.expires_at) < new Date()) {
-  //     return res.status(400).send("Invalid or expired link request");
-  //   }
-
-  //   await supabase.from("spotify_link_nonces").delete().eq("nonce", nonce);
-
-  //   const { data, error } = await supabase.from("spotify_users").upsert(
-  //     {
-  //       user_id: linkRecord.data.user_id, // has a value
-  //       spotify_user: spotifyId, // has a value
-  //       access_token: tokenData.access_token, // has a value
-  //       refresh_token: tokenData.refresh_token, // has a value
-  //       expires_at: new Date(
-  //         Date.now() + tokenData.expires_in * 1000
-  //       ).toISOString(),
-  //     },
-  //     { onConflict: ["user_id"] }
-  //   );
-  //   if (error) {
-  //     console.error("Error upserting spotify_users:", error);
-  //     return res.status(500).send("Database error during linking process");
-  //   }
-  // } else {
-  //   return res.status(400).send("Invalid state flow");
-  // }
-
-  // console.log("Spotify account logged in successfully");
-  // return res.redirect(`${process.env.CLIENT_URL}/home`);
-  // return res.status(200).send("Spotify account connected successfully");
 };
 
 exports.getPlaylistTracks = async (req, res) => {
@@ -291,7 +162,6 @@ exports.getPlaylistTracks = async (req, res) => {
 exports.getPlaylists = async (req, res) => {
   const spotifyToken = req.spotifyAccessToken; // Expect "Bearer {access_token}"
   const supabaseUser = req.supabaseUser;
-  // console.log("Access token in getPlaylists:", accessToken); // correct
 
   if (!spotifyToken || !supabaseUser) {
     return res.status(401).json({ error: "Missing access token" });
