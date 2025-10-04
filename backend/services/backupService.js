@@ -54,19 +54,33 @@ async function handleWeeklyBackup({
     const currentHash = generateHash(currentTracks);
 
     // Get last backup from Supabase
-    const { data: lastBackup, error: fetchError } = await supabase
+    // To Do: first get all backups for the user to check if they've exceeded the max limir
+    // If so - show them the error. If not - retrieve the last backup from the returned rows
+    const {
+      data: backups,
+      error: fetchError,
+      count,
+    } = await supabase
       .from("weekly_backups")
-      .select("hash")
+      .select("hash, playlist_id", { count: "exact" })
       .eq("user_id", supabaseUser)
-      .eq("playlist_id", playlistId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
+      .order("created_at", { ascending: false });
+
+    console.log(count + " existing backups have been found: " + backups);
 
     if (fetchError && fetchError.code !== "PGRST116") {
       // ignore "no rows found"
       throw fetchError;
     }
+
+    if (count >= 5) {
+      // let frontend know they cannot exceed the limit
+      const limitError = new Error("MAX_BACKUPS_REACHED");
+      limitError.code = "MAX_BACKUPS_REACHED"; // custom code for the frontend
+      throw limitError;
+    }
+
+    const lastBackup = backups.map((b) => b.playlist_id === playlistId);
 
     // If hash matches last backup, skip insert
     if (lastBackup && lastBackup.hash === currentHash) {
@@ -97,6 +111,7 @@ async function handleWeeklyBackup({
     console.log(`New backup inserted for playlist ${playlistName}`);
   } catch (error) {
     console.error("Error during weekly backup:", error);
+    throw error;
   }
 
   console.log("Weekly backup saved");
@@ -138,7 +153,13 @@ async function removeBackup(playlistId) {
 }
 
 async function retrieveBackups({ accessToken, supabaseUser }) {
-  const { data, error } = await supabase.from("weekly_backups").select("*");
+  if (!accessToken || !supabaseUser) {
+    throw new Error("Missing authorization to retrieve backups!");
+  }
+  const { data, error } = await supabase
+    .from("weekly_backups")
+    .select("*", { count: "exact" })
+    .eq("user_id", supabaseUser);
 
   if (error) {
     console.error("Error fetching backups:", error);

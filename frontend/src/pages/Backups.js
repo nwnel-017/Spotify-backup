@@ -74,11 +74,14 @@ const Backups = () => {
 
   useEffect(() => {
     const fetchBackups = async () => {
+      startLoading("page");
       try {
         const res = await getMyBackups();
         setBackups(res);
       } catch (error) {
         console.log("Error retrieving backups from Backup component: " + error);
+      } finally {
+        stopLoading("page");
       }
     };
 

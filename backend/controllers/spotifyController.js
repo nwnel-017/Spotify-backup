@@ -17,6 +17,32 @@ exports.getSession = async (req, res) => {
   return res.status(200).json({ user });
 };
 
+exports.signUp = async (req, res) => {
+  console.log("reached backend signup!");
+
+  const { email, password } = req.body;
+
+  try {
+    const { sanitizedEmail, sanitizedPassword } = spotifyService.authValidation(
+      email,
+      password
+    );
+
+    console.log(email + " " + password); // correct
+
+    if (!sanitizedEmail || !sanitizedPassword) {
+      return res.status(400).json({ message: "Error signing up!" });
+    }
+
+    await spotifyService.signupUser(sanitizedEmail, sanitizedPassword);
+  } catch (error) {
+    console.log("Error in signup process: " + error);
+    return res.status(500).json({ message: "Error signing up!" });
+  }
+
+  return res.status(200).json({ message: "success!" });
+};
+
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 

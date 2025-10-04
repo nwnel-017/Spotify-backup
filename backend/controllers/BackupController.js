@@ -55,7 +55,11 @@ async function enableWeeklyBackup(req, res) {
     return res.json({ message: "Weekly backup enabled for this playlist" });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: "Failed to enable weekly backup" });
+    const status = err.status || 400; // <--- use 400 for expected errors
+    const code = err.code || "UNKNOWN_ERROR";
+    const message = err.message || "An unexpected error occurred.";
+
+    return res.status(status).json({ code, message });
   }
 }
 

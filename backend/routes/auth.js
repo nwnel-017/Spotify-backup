@@ -4,19 +4,23 @@ const router = express.Router();
 const {
   getSession,
   login,
+  signUp,
   connectSpotify,
   refreshToken,
   handleCallback,
 } = require("../controllers/spotifyController");
+
+// First Time Sign up
+router.post("/signup", signUp);
+
+// Standard Login
+router.post("/login", login);
 
 // get session
 router.get("/me", getSession);
 
 // refresh access token
 router.get("/refreshToken", refreshToken);
-
-// Standard Login
-router.post("/login", login);
 
 // Login through Spotify OAuth
 router.get("/loginWithSpotify", connectSpotify);

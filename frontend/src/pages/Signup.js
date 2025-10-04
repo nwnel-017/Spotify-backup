@@ -1,49 +1,44 @@
 import React, { useState } from "react";
 import { signup } from "../services/SpotifyService";
 import { supabase } from "../supabase/supabaseClient";
+import { signupUser } from "../services/SpotifyService";
 import styles from "./styles/Home.module.css";
+import { toast } from "react-toastify";
 
 const SignupPage = () => {
-  const [errorMessage, setErrorMessage] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordReenter, setPasswordReenter] = useState("");
-  const [verficationSent, setVerificationSent] = useState(false);
 
   const handleSignUp = async (e) => {
     e.preventDefault();
 
     // To Do: fix -> this block doesnt work
     if (!email || !password) {
-      setErrorMessage("Please enter both email and password.");
+      toast.error("Please enter both email and password!");
       return;
     } else if (!passwordReenter) {
-      setErrorMessage("Please reenter your password");
+      toast.error("Please reenter your password");
       return;
     } else if (password != passwordReenter) {
-      setErrorMessage("Passwords do not match");
+      toast.error("Passwords do not match");
       return;
     }
 
-    setErrorMessage("");
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${process.env.REACT_APP_CLIENT_URL}/home`,
-      },
-    });
-
-    if (error) {
-      // toast.error("Error creating account");
-      console.log("Error signing up:", error.message);
+    try {
+      await signupUser(email, password);
+    } catch (error) {
+      console.log("Error signing up!");
+      // To Do: handle different error types here
+      toast.error("There was an error signing up");
       return;
-    } else {
-      // toast.success("Verification email sent! Please check your inbox.");
-      console.log("Verification email sent! Please check your inbox.");
     }
-    setVerificationSent(true);
-    console.log("Signup successful:", data);
+
+    toast.success(
+      "Verification email has been sent! Please follow the link to verify your account"
+    );
+
+    console.log("Signup successful");
   };
 
   const login = () => {

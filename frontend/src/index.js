@@ -7,7 +7,8 @@ import reportWebVitals from "./reportWebVitals";
 import { LoadingProvider } from "./context/LoadingContext";
 import { AuthProvider } from "./context/AuthContext.js";
 import GlobalLoading from "./context/GlobalLoading";
-import { Toaster } from "react-hot-toast"; // ✅ add this
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "./icons"; // just import it once to register icons globally
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
@@ -17,6 +18,7 @@ root.render(
       <LoadingProvider>
         <AuthProvider>
           <App />
+          <ToastContainer />
         </AuthProvider>
       </LoadingProvider>
     </BrowserRouter>

@@ -31,6 +31,15 @@ const Popup = ({ playlist, show, onClose }) => {
       await triggerWeeklyBackup(playlistId, playlistName);
     } catch (error) {
       console.log(error);
+      if (error.code === "MAX_BACKUPS_REACHED") {
+        alert(
+          "You have already reached the limit of 5 scheduled backups! Please upgrade your account to save more playlists, or save as a CSV file"
+        );
+      } else if (error.code === "DUPLICATE_BACKUP") {
+        alert("This playlist is already backed up!");
+      } else {
+        alert(error.message || "Something went wrong while backing up");
+      }
     } finally {
       stopLoading("overlay");
     }

@@ -4,12 +4,56 @@ const axios = require("axios");
 const supabase = require("../utils/supabase/supabaseClient");
 const jwt = require("jsonwebtoken");
 const crypto = require("../utils/crypto");
+const { validateInput } = require("../utils/authValidation/validator");
 
 let accessToken = "";
 const tokenUrl = process.env.SPOTIFY_TOKEN_URL;
 const clientId = process.env.SPOTIFY_CLIENT_ID;
 const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 const TOKEN_REFRESH_INTERVAL = 3500 * 1000; // ~58 minutes
+
+function authValidation(email, password) {
+  if (!email || !password) {
+    throw new Error("missing email and password!");
+  }
+
+  const { sanitizedEmail, sanitizedPassword } = validateInput(email, password);
+
+  console.log("after validation: " + sanitizedEmail + ", " + sanitizedPassword); // both undefined - works correctly
+
+  if (!sanitizedEmail || !sanitizedPassword) {
+    throw new Error("Invalid input!");
+  }
+
+  return { email, password };
+}
+
+async function signupUser(email, password) {
+  console.log("signing up user...");
+
+  // To Do: use supabase to sign in the user, then manually store tokens in cookies
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${process.env.REACT_APP_CLIENT_URL}/home`,
+    },
+  });
+
+  if (error) {
+    // still unsure if i should throw errors or only return status in controller
+    return res.status(401).json({ error: error.message });
+  }
+
+  // const { access_token, refresh_token, expires_in } = data.session;
+
+  try {
+    await setAuthCookies(res, data.session);
+  } catch (error) {
+    console.log("Error setting cookies: " + error);
+    return res.status(500).json({ message: "Error setting cookies" });
+  }
+}
 
 async function setAuthCookies(res, session) {
   try {
@@ -358,6 +402,8 @@ async function getProfileInfo(accessToken) {
 }
 
 module.exports = {
+  authValidation,
+  signupUser,
   refreshAccessToken,
   exchangeCodeForToken,
   handleOAuth,

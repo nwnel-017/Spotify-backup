@@ -46,7 +46,6 @@ const Home = () => {
   const closeWindows = () => {
     setSidebarOpen(!sidebarOpen);
     setViewBackups(!viewBackups);
-    console.log("setSidebar = " + sidebarOpen);
   };
 
   useEffect(() => {

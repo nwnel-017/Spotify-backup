@@ -18,8 +18,25 @@ export const getSpotifyProfile = async () => {
   }
 };
 
+export const signupUser = async (email, password) => {
+  if (!email || !password) {
+    throw new Error("Missing email and / or password!");
+  }
+
+  const res = await axios.post(
+    `${process.env.REACT_APP_API_BASE_URL}/auth/signup`,
+    {
+      email,
+      password,
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Error signing up!");
+  }
+};
+
 export const loginUser = async (email, password) => {
-  // To Do: sanitize input first and then send to backend
   if (!email || !password) {
     throw new Error("Email and password are required");
   }
@@ -133,19 +150,21 @@ export async function backupPlaylist(playlistId, playlistName) {
 
 export async function triggerWeeklyBackup(playlistId, playlistName) {
   console.log("calling weekly backup API"); // successfully reached
-  const res = await axios.post(
-    "http://localhost:5000/api/backup/weekly",
-    { playlistId, playlistName }, // POST body
-    {
-      withCredentials: true,
-    }
-  );
-
-  if (res.status !== 200) {
-    throw new Error(`Failed to trigger weekly backup: ${res.status}`);
+  try {
+    await axios.post(
+      `${process.env.REACT_APP_API_BASE_URL}/backup/weekly`,
+      { playlistId, playlistName }, // POST body
+      {
+        withCredentials: true,
+      }
+    );
+  } catch (error) {
+    throw {
+      message: error.response?.data?.message || error.message,
+      code: error.response?.data?.code || "UNKNOWN_ERROR",
+      status: error.response?.status || 500,
+    };
   }
-
-  return res;
 }
 
 export async function deleteBackup(playlistId) {

@@ -6,9 +6,13 @@ const activeJobs = new Map(); // cron task
 async function scheduleBackup(config) {
   const { playlistId } = config; // the playlist id needs to be playlist id in spotify
 
+  // To Do: check supabase to make sure the limit of 5 playlists has not been exceeded
+
   if (activeJobs.has(playlistId)) {
     console.log(`Weekly backup already scheduled for playlist ${playlistId}`);
-    return;
+    const duplicateError = new Error("DUPLICATE_BACKUP");
+    duplicateError.code = "DUPLICATE_BACKUP"; // custom code for the frontend
+    throw duplicateError;
   }
 
   // running initial backup
@@ -17,6 +21,7 @@ async function scheduleBackup(config) {
     console.log("Initial backup completed");
   } catch (err) {
     console.error("Initial backup failed", err);
+    throw err;
   }
 
   // Run every Monday at 9 AM
@@ -27,6 +32,7 @@ async function scheduleBackup(config) {
       console.log("Weekly backup completed");
     } catch (err) {
       console.error("Weekly backup failed", err);
+      throw err;
     }
   });
   activeJobs.set(playlistId, task);
