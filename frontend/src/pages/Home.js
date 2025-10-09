@@ -1,23 +1,29 @@
-import { useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useContext, useEffect, useState, useRef } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { LoadingContext } from "../context/LoadingContext";
 import Playlists from "./Playlists";
 import Sidebar from "../components/Sidebar";
 import Backups from "./Backups";
+import AccountNotLinked from "../components/AccountNotLinked";
 import {
   getSpotifyProfile,
-  linkSpotifyAccount,
   startSpotifyAuth,
 } from "../services/SpotifyService";
 import { supabase } from "../supabase/supabaseClient";
-import { useAuth } from "../context/AuthContext";
+import { toast } from "react-toastify";
 import "../App.css";
 import styles from "./styles/Home.module.css";
 
 const Home = () => {
+  const { firstTimeUser } = useParams();
+  const hasWelcomed = useRef(false); // uncontrolled component to track if the first time user toast message has been displayed
   const { navigate } = useNavigate();
   const [profile, setProfile] = useState(null);
-  const { startLoading, stopLoading } = useContext(LoadingContext);
+  const {
+    startLoading,
+    stopLoading,
+    active: isLoading,
+  } = useContext(LoadingContext);
   const [accountNotLinked, setAccountNotLinked] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [viewBackups, setViewBackups] = useState(false);
@@ -28,6 +34,15 @@ const Home = () => {
   const handleUnauthorized = () => {
     console.log("User is not logged in. Redirecting to login page.");
     // logout();
+  };
+
+  const linkAccount = async () => {
+    console.log("beginning account link...");
+    try {
+      await startSpotifyAuth("link");
+    } catch (error) {
+      throw new Error("Error linking account: " + error);
+    }
   };
 
   const logout = async () => {
@@ -78,18 +93,18 @@ const Home = () => {
     }
   }, [profile]);
 
+  useEffect(() => {
+    if (!isLoading && firstTimeUser === "true" && !hasWelcomed.current) {
+      toast.success(
+        "Welcome to SpotSave! Visit the 'About' page for instructions on how to use"
+      );
+      hasWelcomed.current = true;
+      window.history.replaceState(null, "", "/home"); // Clean up the URL so it doesn't trigger again on refresh
+    }
+  }, [isLoading, firstTimeUser]);
+
   if (accountNotLinked) {
-    return (
-      <div className="mt-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
-        <h1>
-          Your Spotify account is not linked. Please link your account to access
-          all features.
-        </h1>
-        <button onClick={() => startSpotifyAuth("link")}>
-          Click Here to Link Your Account
-        </button>
-      </div>
-    );
+    return <AccountNotLinked linkAccount={() => linkAccount()} />;
   }
   return (
     <div className={styles.dashboard}>

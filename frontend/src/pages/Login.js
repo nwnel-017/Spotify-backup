@@ -23,17 +23,6 @@ const LoginPage = () => {
       return;
     }
 
-    const {
-      valid,
-      email: sanitizedEmail,
-      password: sanitizedPassword,
-    } = validateInput(email, password);
-
-    if (!valid) {
-      setMessage("Invalid email or password format.");
-      return;
-    }
-
     try {
       const res = await loginUser(email, password);
       console.log("Login successful");
@@ -43,6 +32,7 @@ const LoginPage = () => {
         return;
       }
       await getUser();
+
       navigate("/home");
     } catch (error) {
       console.error("Login error:", error);
@@ -50,9 +40,6 @@ const LoginPage = () => {
     }
   };
 
-  const handleSignUp = () => {
-    window.location.href = `${process.env.REACT_APP_CLIENT_URL}/`;
-  };
   return (
     <div className={`${styles.dashboard} ${styles.loginPage}`}>
       <h1>Login</h1>

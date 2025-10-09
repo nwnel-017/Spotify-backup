@@ -3,18 +3,22 @@ const authMiddleware = require("../middleware/authMiddleware");
 const router = express.Router();
 const {
   getSession,
+  // getUser,
   login,
-  signUp,
+  signup,
   connectSpotify,
   refreshToken,
   handleCallback,
+  verifyEmailCallback,
 } = require("../controllers/spotifyController");
 
 // First Time Sign up
-router.post("/signup", signUp);
+router.post("/signup", signup);
 
 // Standard Login
 router.post("/login", login);
+
+router.post("/emailVerification", verifyEmailCallback);
 
 // get session
 router.get("/me", getSession);

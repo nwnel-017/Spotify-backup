@@ -2,9 +2,12 @@
 require("dotenv").config();
 const axios = require("axios");
 const supabase = require("../utils/supabase/supabaseClient");
+// const { getSupabase } = require("../utils/supabase/supabaseClient");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 const crypto = require("../utils/crypto");
 const { validateInput } = require("../utils/authValidation/validator");
+const { json } = require("express");
 
 let accessToken = "";
 const tokenUrl = process.env.SPOTIFY_TOKEN_URL;
@@ -19,40 +22,157 @@ function authValidation(email, password) {
 
   const { sanitizedEmail, sanitizedPassword } = validateInput(email, password);
 
-  console.log("after validation: " + sanitizedEmail + ", " + sanitizedPassword); // both undefined - works correctly
+  console.log("after validation: " + sanitizedEmail + ", " + sanitizedPassword); // correct email
 
   if (!sanitizedEmail || !sanitizedPassword) {
     throw new Error("Invalid input!");
   }
 
-  return { email, password };
+  return {
+    sanitizedEmail: sanitizedEmail,
+    sanitizedPassword: sanitizedPassword,
+  };
 }
 
-async function signupUser(email, password) {
+async function signupUser(req, res, email, password) {
+  // To Do - remove supabase auth
+  // insert into new users table in supabase
+  // sign a JWT with the user id
+  // store JWT in cookies
+  // return success message to client
   console.log("signing up user...");
 
-  // To Do: use supabase to sign in the user, then manually store tokens in cookies
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo: `${process.env.REACT_APP_CLIENT_URL}/home`,
-    },
-  });
-
-  if (error) {
-    // still unsure if i should throw errors or only return status in controller
-    return res.status(401).json({ error: error.message });
+  if (!email || !password) {
+    throw new Error("missing email and / or password!");
   }
 
-  // const { access_token, refresh_token, expires_in } = data.session;
+  // hash password
+  const hashed = await bcrypt.hash(password, 12);
+
+  console.log("hashed password: " + hashed);
+
+  const { data, error } = await supabase
+    .from("users")
+    .insert([{ email, password: hashed }])
+    .select("id")
+    .single();
+
+  if (!data || error) {
+    if (error.message?.includes("duplicate key")) {
+      const duplicateError = new Error("DUPLICATE_USERS");
+      duplicateError.code = "DUPLICATE_USERS"; // custom code for the frontend
+      throw duplicateError;
+    }
+    throw new Error("Error inserting user into database!");
+  }
+
+  const userId = data.id;
+
+  // generate new jwt
+  //store in cookies
+  try {
+    const newTokens = generateTokens(userId); // success
+
+    setAuthCookies(res, newTokens);
+
+    console.log("JWT generated: " + newTokens);
+  } catch (error) {
+    console.log("Error issuing new tokens: " + error);
+    throw new Error(error.message);
+  }
+
+  // To Do : sign up user using supabase ssr package
+  // try {
+  //   const supabase = getSupabase()
+  // }
+
+  // To Do: use supabase to sign in the user, then manually store tokens in cookies
+  // const { error } = await supabase.auth.signUp({
+  //   email,
+  //   password,
+  //   options: {
+  //     emailRedirectTo: `${process.env.REACT_APP_CLIENT_URL}/home`,
+  //   },
+  // });
+
+  // if (error) {
+  //   // still unsure if i should throw errors or only return status in controller
+  //   throw new Error(error.message);
+  // }
+  // return data;
+}
+
+async function loginUser(email, password) {
+  if (!email || !password) {
+    throw new Error("missing email and / or password!");
+  }
 
   try {
-    await setAuthCookies(res, data.session);
+    // retrieve user by email and compare hashes
+    const { data: user, error } = await supabase
+      .from("users")
+      .select("id, email, password")
+      .eq("email", email)
+      .single();
+
+    if (!user || error) {
+      throw new Error("Error logging in!: " + error.message);
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Incorrect email or password!" });
+    }
+
+    const newTokens = generateTokens(user.id);
+
+    if (!newTokens || !newTokens.access_token || !newTokens.refresh_token) {
+      throw new Error("unable to generate tokens!");
+    }
+
+    return newTokens;
   } catch (error) {
-    console.log("Error setting cookies: " + error);
-    return res.status(500).json({ message: "Error setting cookies" });
+    console.log("Error signing in user: " + error);
+    throw new Error("Error logging in: " + error);
   }
+}
+
+function validateToken(req) {
+  const token = req.cookies?.["sb-access-token"];
+
+  if (!token) {
+    throw new Error("Missing token!");
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.id;
+    return userId;
+  } catch (err) {
+    console.error("JWT verification failed:", err.message);
+    throw new Error("Not authenticated!");
+  }
+}
+
+function generateTokens(id) {
+  if (!id) {
+    throw new Error("No ID provided!");
+  }
+
+  const access_token = jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: "15m",
+  });
+
+  const refresh_token = jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: "15m",
+  });
+
+  if (!access_token || !refresh_token) {
+    console.log("Failed to generate token!");
+    throw new Error("Failed to generate token!");
+  }
+
+  return { access_token, refresh_token };
 }
 
 async function setAuthCookies(res, session) {
@@ -61,7 +181,7 @@ async function setAuthCookies(res, session) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: session.expires_in * 1000,
+      maxAge: 15 * 60 * 1000, // expires in not defined!
     });
 
     res.cookie("sb-refresh-token", session.refresh_token, {
@@ -404,6 +524,7 @@ async function getProfileInfo(accessToken) {
 module.exports = {
   authValidation,
   signupUser,
+  loginUser,
   refreshAccessToken,
   exchangeCodeForToken,
   handleOAuth,
@@ -411,5 +532,6 @@ module.exports = {
   getPlaylists,
   getProfileInfo,
   setAuthCookies,
+  validateToken,
   refreshSpotifyToken,
 };

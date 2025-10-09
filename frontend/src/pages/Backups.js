@@ -8,6 +8,7 @@ import RestoreOptions from "../components/RestoreOptions";
 import FileRestore from "../components/FileRestore";
 import { deleteBackup, restorePlaylist } from "../services/SpotifyService";
 import { LoadingContext } from "../context/LoadingContext";
+import { toast } from "react-toastify";
 
 const Backups = () => {
   const [backups, setBackups] = useState([]);
@@ -15,7 +16,6 @@ const Backups = () => {
   const [showFileRestore, setShowFileRestore] = useState(false);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const { startLoading, stopLoading } = useContext(LoadingContext);
-  const [message, setMessage] = useState("");
 
   const toggleOptions = (id) => {
     setShowOptions(!showOptions);
@@ -41,10 +41,10 @@ const Backups = () => {
     try {
       startLoading("overlay");
       const res = await deleteBackup(playlistId);
-      setMessage("Backup successfully removed.");
+      toast.success("Backup successfully removed!");
     } catch (error) {
       console.error("Error deleting backup: " + error);
-      setMessage("Error deleting backup. Please try again later.");
+      toast.error("Error deleting backup. Please try again later!");
     } finally {
       stopLoading("overlay");
       setSelectedPlaylist(null);
@@ -62,13 +62,15 @@ const Backups = () => {
       startLoading("overlay");
       await restorePlaylist(playlistId);
       // toast success
+      toast.success(
+        "Successfully created restored playlist! Backup will remain scheduled until it is manually deleted"
+      );
     } catch (error) {
       console.error("Error restoring backup: " + error);
-      setMessage("Error restoring backup. Please try again later.");
+      toast.error("Error restoring playlist. Please try again later!");
     } finally {
       stopLoading("overlay");
       setSelectedPlaylist(null);
-      // setBackups(backups.filter((b) => b.id !== playlistId));
     }
   };
 

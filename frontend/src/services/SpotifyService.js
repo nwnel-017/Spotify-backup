@@ -28,10 +28,12 @@ export const signupUser = async (email, password) => {
     {
       email,
       password,
-    }
+    },
+    { withCredentials: true }
   );
 
-  if (!res.ok) {
+  if (res.status !== 200) {
+    console.log(res.status);
     throw new Error("Error signing up!");
   }
 };
@@ -61,7 +63,7 @@ export const loginUser = async (email, password) => {
   return response;
 };
 
-// To Do: we are now using cookies to manage sessions
+// To Do: add third mode = "uploadPlaylist" -> we will have user login through OAuth when they restore a playlist
 export const startSpotifyAuth = async (mode = "link") => {
   console.log("starting auth with mode " + mode);
 
@@ -71,11 +73,13 @@ export const startSpotifyAuth = async (mode = "link") => {
 
   let endpoint;
   if (mode === "link") {
-    const session = await supabase.auth.getSession();
-    const token = session.data.session?.access_token;
+    // const session = await supabase.auth.getSession();
+    // const token = session.data.session?.access_token;
     endpoint = `${process.env.REACT_APP_API_BASE_URL}/auth/linkAccount`;
   } else if (mode === "login") {
     endpoint = `${process.env.REACT_APP_API_BASE_URL}/auth/loginWithSpotify`;
+  } else if (mode === "uploadPlaylist") {
+    // To Do: finish implementation here
   }
   try {
     const res = await axios.get(endpoint, { withCredentials: true });

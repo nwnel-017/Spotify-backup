@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { signup } from "../services/SpotifyService";
 import { supabase } from "../supabase/supabaseClient";
 import { signupUser } from "../services/SpotifyService";
@@ -9,6 +10,7 @@ const SignupPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordReenter, setPasswordReenter] = useState("");
+  const navigate = useNavigate();
 
   const handleSignUp = async (e) => {
     e.preventDefault();
@@ -26,10 +28,14 @@ const SignupPage = () => {
     }
 
     try {
-      await signupUser(email, password);
+      const res = await signupUser(email, password);
+      console.log("retrieved " + res + "from signup. now navigating to home!");
+      navigate("/Home");
+      // toast.success(
+      //   "Verification email sent! Please follow the link sent to your email to verify!"
+      // );
     } catch (error) {
       console.log("Error signing up!");
-      // To Do: handle different error types here
       toast.error("There was an error signing up");
       return;
     }
@@ -71,7 +77,7 @@ const SignupPage = () => {
         ></input>
       </form>
       <button onClick={handleSignUp} className={styles.submitButton}>
-        Login
+        Create Account
       </button>
       <div className={styles.dividerContainer}>
         <hr className={styles.divider} />

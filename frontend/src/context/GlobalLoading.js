@@ -10,13 +10,6 @@ const GlobalLoading = () => {
   if (!active) return null;
 
   return (
-    // <div
-    //   // className={`${styles.loadingContext} ${
-    //   //   loading.type === "page"
-    //   //     ? styles.fullPageLoader
-    //   //     : styles.transparentLoader
-    //   // }`}
-    // >
     <div
       className={`${styles.loadingContext} ${
         type === "page" ? styles.fullPageLoader : styles.transparentLoader

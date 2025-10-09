@@ -2,22 +2,21 @@ const spotifyService = require("../services/spotifyService");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const supabase = require("../utils/supabase/supabaseClient"); // remove later -> move all supabase functionality to spotifyService.js
-const { access } = require("fs");
 
 exports.getSession = async (req, res) => {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser(req.cookies["sb-access-token"]);
+  // To Do : implement
+  console.log("Attempting to retrieve session!");
 
-  if (error) {
-    return res.status(401).json({ error: "Unauthorized" });
+  try {
+    const userId = spotifyService.validateToken(req);
+    console.log("user retrieved from getSession: " + userId);
+    return res.status(200).json({ user: userId }); // send the user back
+  } catch (error) {
+    return res.status(401).json({ message: "Not authenticated!" });
   }
-
-  return res.status(200).json({ user });
 };
 
-exports.signUp = async (req, res) => {
+exports.signup = async (req, res) => {
   console.log("reached backend signup!");
 
   const { email, password } = req.body;
@@ -27,20 +26,26 @@ exports.signUp = async (req, res) => {
       email,
       password
     );
-
-    console.log(email + " " + password); // correct
+    {
+    }
+    console.log(sanitizedEmail + " " + sanitizedPassword); // undefined undefined
 
     if (!sanitizedEmail || !sanitizedPassword) {
       return res.status(400).json({ message: "Error signing up!" });
     }
 
-    await spotifyService.signupUser(sanitizedEmail, sanitizedPassword);
+    await spotifyService.signupUser(
+      req,
+      res,
+      sanitizedEmail,
+      sanitizedPassword
+    );
+    // await spotifyService.setAuthCookies(res, result.session);
+    return res.status(200).json({ message: "success!" });
   } catch (error) {
-    console.log("Error in signup process: " + error);
+    console.log("Error in signup process: " + error); // getSupabase is not a function
     return res.status(500).json({ message: "Error signing up!" });
   }
-
-  return res.status(200).json({ message: "success!" });
 };
 
 exports.login = async (req, res) => {
@@ -51,14 +56,23 @@ exports.login = async (req, res) => {
   }
 
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    // validate input
+    const { sanitizedEmail, sanitizedPassword } = spotifyService.authValidation(
       email,
-      password,
-    });
-    if (error) {
-      return res.status(401).json({ error: error.message });
+      password
+    );
+
+    if (!sanitizedEmail || !sanitizedPassword) {
+      return res.status(400).json({ message: "Invalid email or password!" });
     }
-    spotifyService.setAuthCookies(res, data.session);
+
+    const session = await spotifyService.loginUser(
+      sanitizedEmail,
+      sanitizedPassword
+    );
+
+    // retrieve user from supabase
+    spotifyService.setAuthCookies(res, session);
     return res.status(200).json({ message: "Login successful" });
   } catch (error) {
     console.error("Login error:", error);
@@ -78,22 +92,13 @@ exports.search = async (req, res) => {
 
 exports.refreshToken = async (req, res) => {
   console.log("reached refresh token controller");
-  try {
-    const refreshToken = res.cookies["sb-refresh-token"];
-    if (!refreshToken) {
-      return res.status(400).json({ error: "No refresh token provided" });
-    }
 
-    const newSession = await spotifyService.refreshAccessToken(refreshToken);
-    spotifyService.setAuthCookies(res, newSession);
-    return res.status(200).json({ message: "Token refreshed" });
-  } catch (error) {
-    console.error("Error refreshing token:", error);
-    return res.status(500).json({ error: "Failed to refresh token" });
-  }
+  // To Do: implement manual token refresh
 };
 
+//
 exports.connectSpotify = async (req, res) => {
+  console.log("reached connectSpotify controller");
   const isLinkFlow = !!req.supabaseUser;
   const scope =
     "playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public";
@@ -139,7 +144,7 @@ exports.connectSpotify = async (req, res) => {
 };
 
 // store spotify tokens in supabase
-// to do: way to much code here -> goint to move business logic to spotifyService.js
+// To Do: need to fix foreign key relation from spotify_users to users -> getting error when trying to add foreign key
 exports.handleCallback = async (req, res) => {
   const { code, state } = req.query;
 
@@ -163,11 +168,16 @@ exports.handleCallback = async (req, res) => {
       spotifyService.setAuthCookies(res, result.session);
     }
 
-    return res.redirect(`${process.env.CLIENT_URL}/home`);
+    return res.redirect(`${process.env.CLIENT_URL}/home/${true}`);
   } catch (err) {
     console.error(err);
     return res.status(500).send("OAuth callback failed");
   }
+};
+
+exports.verifyEmailCallback = async (req, res) => {
+  console.log("Hit verification email callback!");
+  return res.status(200).json({ message: "Success!" });
 };
 
 exports.getPlaylistTracks = async (req, res) => {

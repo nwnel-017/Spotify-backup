@@ -17,8 +17,8 @@ export const AuthProvider = ({ children }) => {
           withCredentials: true,
         }
       );
-      console.log("Fetched user:", data.user);
-      setUser(data.user || null);
+      console.log("Fetched user:", data);
+      setUser(data || null);
     } catch (error) {
       console.error("Error fetching session. Attempting to refresh token");
       try {

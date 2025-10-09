@@ -8,6 +8,7 @@ import {
   backupPlaylist,
   triggerWeeklyBackup,
 } from "../services/SpotifyService";
+import { toast } from "react-toastify";
 
 // To Do: move trigger weekly backup and one time backup functionality to this page
 const Popup = ({ playlist, show, onClose }) => {
@@ -20,6 +21,7 @@ const Popup = ({ playlist, show, onClose }) => {
       await backupPlaylist(playlistId, playlistName);
     } catch (error) {
       console.log(error);
+      toast.error("Something went wrong while downloading your playlist!");
     } finally {
       stopLoading("overlay");
     }
@@ -29,16 +31,19 @@ const Popup = ({ playlist, show, onClose }) => {
     startLoading("overlay");
     try {
       await triggerWeeklyBackup(playlistId, playlistName);
+      toast.success(
+        "Successfully backed up playlist! View 'Backups' page to manage your backup"
+      );
     } catch (error) {
       console.log(error);
       if (error.code === "MAX_BACKUPS_REACHED") {
-        alert(
+        toast.error(
           "You have already reached the limit of 5 scheduled backups! Please upgrade your account to save more playlists, or save as a CSV file"
         );
       } else if (error.code === "DUPLICATE_BACKUP") {
-        alert("This playlist is already backed up!");
+        toast.error("This playlist is already backed up!");
       } else {
-        alert(error.message || "Something went wrong while backing up");
+        toast.error("Something went wrong while backing up");
       }
     } finally {
       stopLoading("overlay");

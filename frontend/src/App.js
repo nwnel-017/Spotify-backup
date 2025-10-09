@@ -25,6 +25,14 @@ function App() {
           }
         />
         <Route
+          path="/home/:firstTimeUser"
+          element={
+            <PrivateRoute>
+              <Home />
+            </PrivateRoute>
+          }
+        />
+        <Route
           path="/restore"
           element={
             <PrivateRoute>
