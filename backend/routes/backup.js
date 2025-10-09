@@ -5,8 +5,8 @@ const {
   oneTimeBackup,
   getMyBackups,
   deleteBackup,
-  restorePlaylist,
 } = require("../controllers/BackupController");
+const { restorePlaylist } = require("../controllers/spotifyController");
 const authMiddleware = require("../middleware/authMiddleware");
 const spotifyAuthMiddleware = require("../middleware/spotifyAuthMiddleware");
 const restoreBackupMiddleware = require("../middleware/restoreBackupMiddleware");
@@ -32,13 +32,16 @@ router.post(
 );
 
 // POST /api/backup/restore/id
-router.post(
-  "/restore/:playlistId",
-  authMiddleware,
-  spotifyAuthMiddleware,
-  restoreBackupMiddleware,
-  restorePlaylist
-);
+// router.post(
+//   "/restore/:playlistId",
+//   authMiddleware,
+//   spotifyAuthMiddleware,
+//   restoreBackupMiddleware,
+//   restorePlaylist
+// );
+
+// testing new POST method - restoring with OAuth (can restore to any account)
+router.post("/restore/:id", authMiddleware, restorePlaylist);
 
 // POST /api/backup/upload
 router.post(

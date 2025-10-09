@@ -266,6 +266,8 @@ async function handleOAuth(code, parsedState) {
     return loginWithSpotify(spotifyId, tokens); // searches for existing user - upserts tokens - logs in
   } else if (parsedState.flow === "link") {
     return linkSpotifyAccount(parsedState.nonce, spotifyId, tokens);
+  } else if (parsedState.flow === "restore") {
+    // To Do : put restore logic here
   } else {
     throw new Error("Invalid flow");
   }
@@ -316,6 +318,66 @@ async function loginWithSpotify(spotifyId, tokens) {
   if (sessionError) throw sessionError;
 
   return { session: sessionData.session };
+}
+
+async function buildOAuthUrl({ flow, playlistId, userId }) {
+  console.log(
+    "building url with playlist: " + playlistId + " and user " + userId
+  );
+  const scope =
+    "playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public";
+
+  let statePayload;
+
+  if (flow === "restore") {
+    if (!playlistId || !userId) {
+      throw new Error("Error: must have playlist id and user id to restore!");
+    }
+    const nonce = crypto.generateNonce();
+    const { error } = await supabase.from("spotify_link_nonces").upsert({
+      nonce,
+      user_id: userId,
+      expires_at: new Date(Date.now() + 5 * 60 * 1000),
+    });
+
+    if (error) {
+      throw new Error("Error inserting nonce into database: " + error.message);
+    }
+
+    statePayload = { flow, nonce, playlistId };
+  } else if (flow === "link") {
+    if (!userId) {
+      throw new Error("Error: must have user id to link!");
+    }
+    const nonce = crypto.generateNonce();
+    const { error } = await supabase.from("spotify_link_nonces").upsert({
+      nonce,
+      user_id: userId,
+      expires_at: new Date(Date.now() + 5 * 60 * 1000),
+    });
+
+    if (error) {
+      throw new Error("Error inserting nonce into supabase: " + error.message);
+    }
+
+    statePayload = { flow, nonce };
+  } else if (flow === "login") {
+    // implement this!
+  } else {
+    throw new Error("Invalid flow!");
+  }
+
+  console.log("state payload: " + statePayload);
+  const queryParams = new URLSearchParams({
+    response_type: "code",
+    scope: scope,
+    redirect_uri: process.env.REDIRECT_URI,
+    client_id: process.env.SPOTIFY_CLIENT_ID,
+    show_dialog: "true",
+    state: JSON.stringify(statePayload), // Either contains supabase session or null depending on whether we are logging in / linking account
+  });
+
+  return `https://accounts.spotify.com/authorize?${queryParams}`;
 }
 
 async function linkSpotifyAccount(nonce, spotifyId, tokens) {
@@ -528,6 +590,7 @@ module.exports = {
   refreshAccessToken,
   exchangeCodeForToken,
   handleOAuth,
+  buildOAuthUrl,
   getPlaylistTracks,
   getPlaylists,
   getProfileInfo,

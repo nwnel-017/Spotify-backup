@@ -91,15 +91,60 @@ exports.search = async (req, res) => {
 };
 
 exports.refreshToken = async (req, res) => {
-  console.log("reached refresh token controller");
+  console.log("Haven't implemented token refresh!");
 
   // To Do: implement manual token refresh
 };
 
-//
-exports.connectSpotify = async (req, res) => {
+exports.loginWithSpotify = async (req, res) => {
+  console.log("hit spotify login controller");
+  try {
+    const url = await spotifyService.buildOAuthUrl({ flow: "login" });
+    res.json({ url });
+  } catch (error) {
+    throw new Error("Error creating login link: " + error);
+  }
+};
+
+exports.linkSpotify = async (req, res) => {
+  try {
+    const supabaseUser = req.supabaseUser;
+
+    const url = await spotifyService.buildOAuthUrl({
+      flow: "link",
+      userId: supabaseUser,
+    });
+    res.json({ url });
+  } catch (error) {
+    console.log("Error building url: " + error.message);
+    return res.status(500).json({ message: "Failed to restore playlist!" });
+  }
+};
+
+exports.restorePlaylist = async (req, res) => {
+  try {
+    const playlistId = req.params.id;
+    const supabaseUser = req.supabaseUser;
+
+    const url = await spotifyService.buildOAuthUrl({
+      flow: "restore",
+      playlistId,
+      userId: supabaseUser,
+    });
+    res.json({ url });
+  } catch (error) {
+    console.log("Error building url: " + error.message);
+    return res.status(500).json({ message: "Failed to restore playlist!" });
+  }
+};
+
+// To Do: eventually remove - being replaced by top 3 functions
+exports.handleSpotifyOAuth = async (req, res) => {
   console.log("reached connectSpotify controller");
   const isLinkFlow = !!req.supabaseUser;
+
+  // const { flow, playlistId } = req.query;
+
   const scope =
     "playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public";
   let statePayload;
@@ -125,11 +170,18 @@ exports.connectSpotify = async (req, res) => {
       return res.status(500).json({ error: "database error" });
     }
 
-    statePayload = { flow: "link", nonce: nonce };
-  } else {
-    statePayload = { flow: "login" };
+    statePayload = { flow: flow, nonce: nonce };
+  } else if (flow === "login") {
+    statePayload = { flow: flow };
+  } else if (flow === "restorePlaylist") {
+    if (!playlistId) {
+      return res
+        .status(400)
+        .json({ message: "Missing playlist id parameter!" });
+    }
+    statePayload = { flow: flow, nonce: nonce, playlistId: playlistId };
   }
-
+  console.log("state payload: " + statePayload);
   const queryParams = new URLSearchParams({
     response_type: "code",
     scope: scope,
@@ -143,8 +195,7 @@ exports.connectSpotify = async (req, res) => {
   res.json({ url }); //send url back to frontend
 };
 
-// store spotify tokens in supabase
-// To Do: need to fix foreign key relation from spotify_users to users -> getting error when trying to add foreign key
+// To Do : refactor to have business logic in service / add restore flow
 exports.handleCallback = async (req, res) => {
   const { code, state } = req.query;
 
@@ -173,11 +224,6 @@ exports.handleCallback = async (req, res) => {
     console.error(err);
     return res.status(500).send("OAuth callback failed");
   }
-};
-
-exports.verifyEmailCallback = async (req, res) => {
-  console.log("Hit verification email callback!");
-  return res.status(200).json({ message: "Success!" });
 };
 
 exports.getPlaylistTracks = async (req, res) => {

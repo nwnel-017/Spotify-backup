@@ -112,8 +112,6 @@ async function deleteBackup(req, res) {
 }
 
 async function restorePlaylist(req, res) {
-  console.log("reached restore playlist controller"); // successfully reached
-
   const accessToken = req.spotifyAccessToken;
   const userId = req.spotifyId;
   const trackIds = req.trackIds;
@@ -128,8 +126,6 @@ async function restorePlaylist(req, res) {
     return res.status(401).json({ message: "Missing spotify authorization!" });
   }
 
-  console.log("trackIds : " + trackIds);
-  console.log("playlist name: " + playlistName);
   if (!trackIds || !playlistName) {
     console.log("Missing params!");
     return res.status(500).json({

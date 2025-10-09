@@ -6,7 +6,11 @@ import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import RestoreOptions from "../components/RestoreOptions";
 import FileRestore from "../components/FileRestore";
-import { deleteBackup, restorePlaylist } from "../services/SpotifyService";
+import {
+  deleteBackup,
+  restorePlaylist,
+  startSpotifyAuth,
+} from "../services/SpotifyService";
 import { LoadingContext } from "../context/LoadingContext";
 import { toast } from "react-toastify";
 
@@ -52,16 +56,17 @@ const Backups = () => {
     }
   };
 
+  // To Do : now call connectSpotify("restorePlaylist") instead
   const restore = async () => {
     const playlistId = selectedPlaylist;
-    console.log("Restoring backup with id: " + playlistId);
     if (!playlistId) {
       throw new Error("No backup ID provided to restorePlaylist");
     }
     try {
       startLoading("overlay");
       await restorePlaylist(playlistId);
-      // toast success
+      // await startSpotifyAuth("restorePlaylist");
+      await connect;
       toast.success(
         "Successfully created restored playlist! Backup will remain scheduled until it is manually deleted"
       );

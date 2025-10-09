@@ -6,10 +6,10 @@ const {
   // getUser,
   login,
   signup,
-  connectSpotify,
+  linkSpotify,
+  loginWithSpotify,
   refreshToken,
   handleCallback,
-  verifyEmailCallback,
 } = require("../controllers/spotifyController");
 
 // First Time Sign up
@@ -18,8 +18,6 @@ router.post("/signup", signup);
 // Standard Login
 router.post("/login", login);
 
-router.post("/emailVerification", verifyEmailCallback);
-
 // get session
 router.get("/me", getSession);
 
@@ -27,10 +25,10 @@ router.get("/me", getSession);
 router.get("/refreshToken", refreshToken);
 
 // Login through Spotify OAuth
-router.get("/loginWithSpotify", connectSpotify);
+router.get("/loginWithSpotify", loginWithSpotify);
 
 // Link spotify accout with OAuth
-router.get("/linkAccount", authMiddleware, connectSpotify);
+router.get("/linkAccount", authMiddleware, linkSpotify);
 
 // 2. Handle callback and exchange code for access token
 router.get("/callback", handleCallback);

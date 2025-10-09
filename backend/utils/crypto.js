@@ -18,11 +18,6 @@ function encrypt(text) {
 
   const authTag = cipher.getAuthTag().toString("hex");
 
-  console.log(
-    "encrypted value from crypto: " +
-      `${iv.toString("hex")}:${authTag}:${encrypted}`
-  );
-
   return `${iv.toString("hex")}:${authTag}:${encrypted}`;
 }
 
@@ -43,8 +38,6 @@ function decrypt(encryptedText) {
   let decrypted = decipher.update(encrypted, "hex", "utf8");
   decrypted += decipher.final("utf8");
 
-  console.log("decrypted token from crypto: " + decrypted); // has a value
-
   return decrypted;
 }
 
@@ -56,4 +49,8 @@ function generateHash(data) {
   return crypto.createHash("sha256").update(JSON.stringify(data)).digest("hex");
 }
 
-module.exports = { encrypt, decrypt, generateHash };
+function generateNonce() {
+  return crypto.randomBytes(16).toString("hex");
+}
+
+module.exports = { encrypt, decrypt, generateHash, generateNonce };

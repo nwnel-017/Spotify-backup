@@ -73,13 +73,10 @@ export const startSpotifyAuth = async (mode = "link") => {
 
   let endpoint;
   if (mode === "link") {
-    // const session = await supabase.auth.getSession();
-    // const token = session.data.session?.access_token;
     endpoint = `${process.env.REACT_APP_API_BASE_URL}/auth/linkAccount`;
   } else if (mode === "login") {
+    // how do we tell backend which mode we are?
     endpoint = `${process.env.REACT_APP_API_BASE_URL}/auth/loginWithSpotify`;
-  } else if (mode === "uploadPlaylist") {
-    // To Do: finish implementation here
   }
   try {
     const res = await axios.get(endpoint, { withCredentials: true });
@@ -196,18 +193,27 @@ export async function restorePlaylist(playlistId) {
     throw new Error("No backup ID provided to restorePlaylist");
   }
 
-  try {
-    await axios.post(
-      `${process.env.REACT_APP_API_BASE_URL}/backup/restore/${playlistId}`,
-      {},
-      {
-        withCredentials: true,
-      }
-    );
-  } catch (error) {
-    console.log("Error restoring backup: " + error);
-    throw new Error("Error restoring backup: " + error.message);
+  const endpoint = `${process.env.REACT_APP_API_BASE_URL}/backup/restore/${playlistId}`;
+  const res = await axios.post(endpoint, {}, { withCredentials: true });
+
+  if (res.status !== 200) {
+    throw new Error("backend returned: " + res.status);
   }
+  const { url } = await res.data;
+  window.location.href = url;
+
+  // try {
+  //   await axios.post(
+  //     `${process.env.REACT_APP_API_BASE_URL}/backup/restore/${playlistId}`,
+  //     {},
+  //     {
+  //       withCredentials: true,
+  //     }
+  //   );
+  // } catch (error) {
+  //   console.log("Error restoring backup: " + error);
+  //   throw new Error("Error restoring backup: " + error.message);
+  // }
 }
 
 export async function uploadCSV(file, playlistName) {
