@@ -130,10 +130,6 @@
   background-color: var(--spotify-darkgray);
   padding: 1rem;
   border-radius: 8px;
-  /* display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.5rem; */
 }
 
 .playlistsHeader {
@@ -439,4 +435,54 @@
 
 .grayText {
   color: var(--text-gray);
+}
+
+@media (min-width: 1024px) {
+  .headerText {
+    font-size: 2rem;
+  }
+
+  .profileImage {
+    width: 100px;
+    height: 100px;
+  }
+
+  h5 {
+    font-size: 1rem;
+  }
+
+  .search {
+    width: 20rem;
+  }
+
+  .downloadIcon {
+    width: 25px;
+    height: 25px;
+  }
+
+  .playlistTitle {
+    font-size: 0.8rem;
+  }
+
+  .trackCount {
+    font-size: 0.75rem;
+  }
+
+  .playlistsHeader {
+    margin-bottom: 0;
+  }
+
+  .popup {
+    width: 50vw;
+    height: 50vh;
+  }
+
+  .playlistsSection {
+    width: 60vw;
+  }
+
+  .componentContainer {
+    display: flex;
+    justify-content: center;
+  }
 }

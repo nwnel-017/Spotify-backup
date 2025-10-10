@@ -17,3 +17,22 @@ body {
   color: #fff;
   font-size: 1rem;
 }
+
+/* Tablet */
+/* @media (min-width: 768px) {
+  body {
+    font-size: 1.125rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  body {
+    font-size: 1.25rem;
+  }
+}
+
+@media (min-width: 1440px) {
+  body {
+    font-size: 1.375rem;
+  }
+} */

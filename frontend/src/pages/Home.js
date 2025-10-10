@@ -147,23 +147,30 @@ const Home = () => {
           setSidebarOpen(!sidebarOpen);
         }}
       />
-      <header className={styles.header}>
-        <img
-          src={
-            (profile?.images.length > 0 && profile.images[0].url) ||
-            "default-avatar.png"
-          }
-          alt="Profile"
-          className={styles.profileImage}
-        ></img>
-        <h1 className={styles.headerText}>{profile?.display_name}</h1>
-      </header>
-      <div>
-        {viewBackups ? (
-          <Backups />
-        ) : (
-          <Playlists profileLoaded={!!profile} stopParentLoader={stopLoading} />
-        )}
+      <div className={styles.componentContainer}>
+        <div>
+          <header className={styles.header}>
+            <img
+              src={
+                (profile?.images.length > 0 && profile.images[0].url) ||
+                "default-avatar.png"
+              }
+              alt="Profile"
+              className={styles.profileImage}
+            ></img>
+            <h1 className={styles.headerText}>{profile?.display_name}</h1>
+          </header>
+          <div>
+            {viewBackups ? (
+              <Backups />
+            ) : (
+              <Playlists
+                profileLoaded={!!profile}
+                stopParentLoader={stopLoading}
+              />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
