@@ -9,7 +9,6 @@ const {
 const { restorePlaylist } = require("../controllers/spotifyController");
 const authMiddleware = require("../middleware/authMiddleware");
 const spotifyAuthMiddleware = require("../middleware/spotifyAuthMiddleware");
-const restoreBackupMiddleware = require("../middleware/restoreBackupMiddleware");
 const restoreCsvMiddleware = require("../middleware/restoreCsvMiddleware");
 const { rest, auth } = require("../utils/supabase/supabaseClient");
 
@@ -30,15 +29,6 @@ router.post(
   spotifyAuthMiddleware,
   oneTimeBackup
 );
-
-// POST /api/backup/restore/id
-// router.post(
-//   "/restore/:playlistId",
-//   authMiddleware,
-//   spotifyAuthMiddleware,
-//   restoreBackupMiddleware,
-//   restorePlaylist
-// );
 
 // testing new POST method - restoring with OAuth (can restore to any account)
 router.post("/restore/:id", authMiddleware, restorePlaylist);

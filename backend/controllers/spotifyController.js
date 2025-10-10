@@ -91,9 +91,27 @@ exports.search = async (req, res) => {
 };
 
 exports.refreshToken = async (req, res) => {
-  console.log("Haven't implemented token refresh!");
+  console.log("hit refreshToken controller!"); /// hit here
+  try {
+    const refreshToken = req.cookies?.["sb-refresh-token"];
+    if (!refreshToken) {
+      console.log("refresh token was not found in cookies");
+      return res.status(401).json({ message: "Error: no refresh token!" });
+    }
 
-  // To Do: implement manual token refresh
+    console.log(
+      "retrieved refresh token! now call spotifyService.refreshAccessToken"
+    );
+
+    const newTokens = spotifyService.refreshAccessToken(refreshToken);
+    await spotifyService.setAuthCookies(res, newTokens);
+    return res
+      .status(200)
+      .json({ message: "Access token has been refreshed!" });
+  } catch (error) {
+    console.log("Error refreshing token: " + error);
+    return res.status(500).json({ message: "Failed to refresh token!" });
+  }
 };
 
 exports.loginWithSpotify = async (req, res) => {
@@ -123,8 +141,13 @@ exports.linkSpotify = async (req, res) => {
 
 exports.restorePlaylist = async (req, res) => {
   try {
+    // const playlistId = req.params.id;
     const playlistId = req.params.id;
     const supabaseUser = req.supabaseUser;
+
+    if (!supabaseUser || !playlistId) {
+      return res.status(400).json({ message: "Missing parameters!" });
+    }
 
     const url = await spotifyService.buildOAuthUrl({
       flow: "restore",
@@ -195,7 +218,6 @@ exports.handleSpotifyOAuth = async (req, res) => {
   res.json({ url }); //send url back to frontend
 };
 
-// To Do : refactor to have business logic in service / add restore flow
 exports.handleCallback = async (req, res) => {
   const { code, state } = req.query;
 
@@ -218,8 +240,17 @@ exports.handleCallback = async (req, res) => {
     if (parsedState.flow === "login") {
       spotifyService.setAuthCookies(res, result.session);
     }
-
-    return res.redirect(`${process.env.CLIENT_URL}/home/${true}`);
+    if (parsedState.flow === "link") {
+      return res.redirect(
+        `${process.env.CLIENT_URL}/home?firstTimeUser=${true}`
+      );
+    } else if (parsedState.flow === "restore") {
+      return res.redirect(
+        `${process.env.CLIENT_URL}/home?playlistRestored=${true}`
+      );
+    } else {
+      return res.redirect(`${process.env.CLIENT_URL}/home`);
+    }
   } catch (err) {
     console.error(err);
     return res.status(500).send("OAuth callback failed");

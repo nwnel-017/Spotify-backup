@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }) => {
       console.error("Error fetching session. Attempting to refresh token");
       try {
         await axios.get(
-          `${process.env.REACT_APP_API_BASE_URL}/auth/refreshToken`,
+          `${process.env.REACT_APP_API_BASE_URL}/auth/refreshToken`, // why does this get an error?
           {
             withCredentials: true,
           }

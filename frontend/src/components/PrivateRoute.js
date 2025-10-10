@@ -12,7 +12,7 @@ const PrivateRoute = ({ children }) => {
   }
 
   if (!user) {
-    return <Navigate to="/" />; // redirect to landing/login page
+    return <Navigate to="/" />; // immediately
   }
 
   return children; // render the protected page

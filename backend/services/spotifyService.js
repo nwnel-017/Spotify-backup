@@ -6,6 +6,7 @@ const supabase = require("../utils/supabase/supabaseClient");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const crypto = require("../utils/crypto");
+// const backupService = require("./backupService"); // we created a circular dependancy
 const { validateInput } = require("../utils/authValidation/validator");
 const { json } = require("express");
 
@@ -80,26 +81,6 @@ async function signupUser(req, res, email, password) {
     console.log("Error issuing new tokens: " + error);
     throw new Error(error.message);
   }
-
-  // To Do : sign up user using supabase ssr package
-  // try {
-  //   const supabase = getSupabase()
-  // }
-
-  // To Do: use supabase to sign in the user, then manually store tokens in cookies
-  // const { error } = await supabase.auth.signUp({
-  //   email,
-  //   password,
-  //   options: {
-  //     emailRedirectTo: `${process.env.REACT_APP_CLIENT_URL}/home`,
-  //   },
-  // });
-
-  // if (error) {
-  //   // still unsure if i should throw errors or only return status in controller
-  //   throw new Error(error.message);
-  // }
-  // return data;
 }
 
 async function loginUser(email, password) {
@@ -121,7 +102,8 @@ async function loginUser(email, password) {
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Incorrect email or password!" });
+      console.log("Could not find user in database!");
+      throw new Error("Error: user is not signed up!");
     }
 
     const newTokens = generateTokens(user.id);
@@ -141,7 +123,7 @@ function validateToken(req) {
   const token = req.cookies?.["sb-access-token"];
 
   if (!token) {
-    throw new Error("Missing token!");
+    throw new Error("Missing token!"); // error here -> shouldn't be throwing an error if there is no access token
   }
 
   try {
@@ -164,7 +146,7 @@ function generateTokens(id) {
   });
 
   const refresh_token = jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: "15m",
+    expiresIn: "7d",
   });
 
   if (!access_token || !refresh_token) {
@@ -267,7 +249,12 @@ async function handleOAuth(code, parsedState) {
   } else if (parsedState.flow === "link") {
     return linkSpotifyAccount(parsedState.nonce, spotifyId, tokens);
   } else if (parsedState.flow === "restore") {
-    // To Do : put restore logic here
+    return restorePlaylist(
+      parsedState.nonce,
+      parsedState.playlistId,
+      spotifyId,
+      tokens
+    );
   } else {
     throw new Error("Invalid flow");
   }
@@ -320,10 +307,184 @@ async function loginWithSpotify(spotifyId, tokens) {
   return { session: sessionData.session };
 }
 
+async function restorePlaylist(nonce, playlistId, spotifyId, tokens) {
+  const { accessToken, refreshToken, expiresAt } = tokens;
+
+  if (
+    !accessToken ||
+    !refreshToken ||
+    !expiresAt ||
+    !nonce ||
+    !spotifyId ||
+    !playlistId
+  ) {
+    throw new Error("Missing required parameters!");
+  }
+  try {
+    // Verify nonce
+    const { data: linkRecord, error: linkError } = await supabase
+      .from("spotify_nonces")
+      .select("*")
+      .eq("nonce", nonce)
+      .single();
+
+    if (linkError || !linkRecord) {
+      throw new Error("Invalid or expired link request");
+    }
+
+    if (new Date(linkRecord.expires_at) < new Date()) {
+      throw new Error("Link request has expired");
+    }
+
+    const supabaseUserId = linkRecord.user_id;
+
+    // Clean up nonce
+    await supabase.from("spotify_nonces").delete().eq("nonce", nonce);
+
+    const { playlistName, trackIds } = await retrieveTracksAndName(
+      supabaseUserId,
+      playlistId
+    );
+
+    await createAndFillPlaylist(accessToken, spotifyId, playlistName, trackIds);
+  } catch (error) {
+    console.log("Error during nonce validation: " + error);
+    throw new Error("Error validating nonce!");
+  }
+}
+
+async function createAndFillPlaylist(
+  accessToken,
+  userId, // spotify user
+  playlistName,
+  trackIds
+) {
+  if (!playlistName || !trackIds || !accessToken || !userId) {
+    console.log("Missing params in backup service!");
+    throw new Error("Error in Service - missing params to create playlist");
+  }
+  try {
+    const playlistId = await createNewPlaylist(
+      accessToken,
+      userId,
+      playlistName
+    );
+    await addTracksToPlaylist(accessToken, playlistId, trackIds);
+    console.log("Playlist successfully restored!");
+  } catch (error) {
+    throw new Error("Error creating the restored playlist: " + error.message);
+  }
+}
+
+async function addTracksToPlaylist(accessToken, playlistId, trackIds) {
+  if (!accessToken || !playlistId || !trackIds) {
+    throw new Error("Error restoring tracks to the playlist - missing params!");
+  }
+  const batchSize = 100; // max amount of songs spotify allows adding
+
+  for (let i = 0; i < trackIds.length; i += batchSize) {
+    const curBatch = trackIds.slice(i, i + batchSize);
+    const uris = curBatch.map((id) => `spotify:track:${id}`);
+
+    try {
+      await axios.post(
+        `${process.env.SPOTIFY_API_BASE_URL}/playlists/${playlistId}/tracks`,
+        {
+          uris,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    } catch (error) {
+      console.error(
+        "Spotify API error while adding tracks:",
+        error.response
+          ? JSON.stringify(error.response.data, null, 2)
+          : error.message
+      );
+      throw new Error("Error adding tracks to playlist");
+    }
+  }
+}
+
+async function createNewPlaylist(accessToken, userId, playlistName) {
+  if (!accessToken || !playlistName || !userId) {
+    throw new Error("Missing playlist name!");
+  }
+
+  const now = new Date(Date.now());
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const year = now.getFullYear();
+  const formattedDate = `${month}/${day}/${year}`;
+
+  const name = `${playlistName} - Restored ${formattedDate}`;
+
+  // To Do : we still need to grab spotify ID from middleware params
+  // and userId from middleware
+  try {
+    const res = await axios.post(
+      `${process.env.SPOTIFY_API_BASE_URL}/users/${userId}/playlists`,
+      {
+        name,
+        description: "Restored by SpotSave",
+        public: false,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return res.data.id; // the new playlist id
+  } catch (error) {
+    console.error(
+      "Spotify API error:",
+      JSON.stringify(error.response.data, null, 2)
+    );
+
+    throw new Error("Error creating restored playlist: " + error.response.data);
+  }
+}
+
+async function retrieveTracksAndName(userId, playlistId) {
+  if (!userId || !playlistId) {
+    throw new Error("Missing playlist id!");
+  }
+
+  const { data, error } = await supabase
+    .from("weekly_backups")
+    .select("playlist_id, playlist_name, backup_data")
+    .eq("user_id", userId)
+    .eq("playlist_id", playlistId)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") {
+      // No rows found
+      console.log("No rows found in weeky_backups!");
+      return res
+        .status(404)
+        .json({ message: "No backup found for this playlist" });
+    }
+    throw error;
+  }
+  const playlistName = data.playlist_name;
+  const trackIds = (data.backup_data || []).map((track) => track.id);
+
+  if (!trackIds) {
+    throw new Error("Failed to map trackIds!");
+  }
+
+  return { playlistName, trackIds };
+}
+
 async function buildOAuthUrl({ flow, playlistId, userId }) {
-  console.log(
-    "building url with playlist: " + playlistId + " and user " + userId
-  );
   const scope =
     "playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public";
 
@@ -334,7 +495,7 @@ async function buildOAuthUrl({ flow, playlistId, userId }) {
       throw new Error("Error: must have playlist id and user id to restore!");
     }
     const nonce = crypto.generateNonce();
-    const { error } = await supabase.from("spotify_link_nonces").upsert({
+    const { error } = await supabase.from("spotify_nonces").upsert({
       nonce,
       user_id: userId,
       expires_at: new Date(Date.now() + 5 * 60 * 1000),
@@ -350,7 +511,7 @@ async function buildOAuthUrl({ flow, playlistId, userId }) {
       throw new Error("Error: must have user id to link!");
     }
     const nonce = crypto.generateNonce();
-    const { error } = await supabase.from("spotify_link_nonces").upsert({
+    const { error } = await supabase.from("spotify_nonces").upsert({
       nonce,
       user_id: userId,
       expires_at: new Date(Date.now() + 5 * 60 * 1000),
@@ -389,12 +550,13 @@ async function linkSpotifyAccount(nonce, spotifyId, tokens) {
 
   // Verify nonce
   const { data: linkRecord, error: linkError } = await supabase
-    .from("spotify_link_nonces")
+    .from("spotify_nonces")
     .select("*")
     .eq("nonce", nonce)
     .single();
 
   if (linkError || !linkRecord) {
+    console.log("error verifying nonce: " + linkError.message);
     throw new Error("Invalid or expired link request");
   }
 
@@ -403,7 +565,7 @@ async function linkSpotifyAccount(nonce, spotifyId, tokens) {
   }
 
   // Clean up nonce
-  await supabase.from("spotify_link_nonces").delete().eq("nonce", nonce);
+  await supabase.from("spotify_nonces").delete().eq("nonce", nonce);
 
   const encryptedAccess = crypto.encrypt(tokens.accessToken);
   const encryptedRefresh = crypto.encrypt(tokens.refreshToken);
@@ -443,18 +605,32 @@ async function getSpotifyId(accessToken) {
 }
 
 // refreshes token for supabase user
-async function refreshAccessToken(refreshToken) {
-  // To Do: implement token refresh logic
-  const { data, error } = await supabase.auth.refreshSession({
-    refresh_token: refreshToken,
-  });
-
-  if (error || !data.session) {
-    console.log("Error refreshing session");
-    return res.status(401).json({ error: "Error refreshing session" });
+function refreshAccessToken(refreshToken) {
+  console.log("hit refreshAccessToken in spotifyService.js!"); //// this is never hit
+  if (!refreshToken) {
+    throw new Error("Missing token!");
   }
 
-  return data.session;
+  let decoded;
+  try {
+    decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+  } catch (error) {
+    console.log("Refreshing token failed: " + error);
+    throw new Error("Failed to refresh token!");
+  }
+
+  const userId = decoded.id;
+  if (!userId) {
+    console.log("Couldnt retreive user id from verified token!");
+    return res.status(401).json({ error: "Invalid refresh token payload" });
+  }
+
+  const newTokens = generateTokens(userId);
+  if (newTokens) {
+    return newTokens;
+  } else {
+    throw new Error("Failed to retrieve new tokens!");
+  }
 }
 
 // refresh token for spotify api

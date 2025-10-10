@@ -6,12 +6,13 @@ import {
 } from "../services/SpotifyService";
 import styles from "./styles/Home.module.css";
 import Popup from "../components/Popup";
-import { LoadingContext } from "../context/LoadingContext";
-import { useLoading } from "../context/LoadingContext";
+import { LoadingContext, useLoading } from "../context/LoadingContext";
+import { useAuth } from "../context/AuthContext";
 import { faArrowDown } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 const Playlists = ({ stopParentLoader }) => {
+  const { user, authLoading } = useAuth();
   const [allPlaylists, setAllPlaylists] = useState([]);
   const [filteredPlaylists, setFilteredPlaylists] = useState([]);
   const { startLoading, stopLoading } = useLoading();
@@ -92,6 +93,8 @@ const Playlists = ({ stopParentLoader }) => {
   };
 
   useEffect(() => {
+    if (authLoading || !user) return;
+
     const fetchPlaylists = async () => {
       startLoading("page");
       try {
@@ -108,7 +111,7 @@ const Playlists = ({ stopParentLoader }) => {
     };
 
     fetchPlaylists();
-  }, []);
+  }, [authLoading, user]);
 
   // Handle search query
   useEffect(() => {

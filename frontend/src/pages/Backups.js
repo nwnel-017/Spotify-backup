@@ -18,16 +18,15 @@ const Backups = () => {
   const [backups, setBackups] = useState([]);
   const [showOptions, setShowOptions] = useState(false);
   const [showFileRestore, setShowFileRestore] = useState(false);
-  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState(null);
   const { startLoading, stopLoading } = useContext(LoadingContext);
 
   const toggleOptions = (id) => {
     setShowOptions(!showOptions);
-    console.log("selected playlist: " + id);
-    if (!selectedPlaylist) {
-      setSelectedPlaylist(id);
+    if (!selectedPlaylistId) {
+      setSelectedPlaylistId(id);
     } else {
-      setSelectedPlaylist(null); // this gets hit sometimes when we select a new playlist
+      setSelectedPlaylistId(null); // this gets hit sometimes when we select a new playlist
     }
   };
 
@@ -41,7 +40,7 @@ const Backups = () => {
   };
 
   const removeBackup = async () => {
-    const playlistId = selectedPlaylist;
+    const playlistId = selectedPlaylistId;
     try {
       startLoading("overlay");
       const res = await deleteBackup(playlistId);
@@ -51,31 +50,25 @@ const Backups = () => {
       toast.error("Error deleting backup. Please try again later!");
     } finally {
       stopLoading("overlay");
-      setSelectedPlaylist(null);
+      setSelectedPlaylistId(null);
       setBackups(backups.filter((b) => b.playlist_id !== playlistId));
     }
   };
 
-  // To Do : now call connectSpotify("restorePlaylist") instead
   const restore = async () => {
-    const playlistId = selectedPlaylist;
+    const playlistId = selectedPlaylistId;
     if (!playlistId) {
       throw new Error("No backup ID provided to restorePlaylist");
     }
     try {
       startLoading("overlay");
       await restorePlaylist(playlistId);
-      // await startSpotifyAuth("restorePlaylist");
-      await connect;
-      toast.success(
-        "Successfully created restored playlist! Backup will remain scheduled until it is manually deleted"
-      );
     } catch (error) {
       console.error("Error restoring backup: " + error);
       toast.error("Error restoring playlist. Please try again later!");
     } finally {
       stopLoading("overlay");
-      setSelectedPlaylist(null);
+      setSelectedPlaylistId(null);
     }
   };
 

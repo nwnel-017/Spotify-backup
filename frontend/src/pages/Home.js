@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { LoadingContext } from "../context/LoadingContext";
+import { useAuth } from "../context/AuthContext";
 import Playlists from "./Playlists";
 import Sidebar from "../components/Sidebar";
 import Backups from "./Backups";
@@ -15,8 +16,14 @@ import "../App.css";
 import styles from "./styles/Home.module.css";
 
 const Home = () => {
-  const { firstTimeUser } = useParams();
-  const hasWelcomed = useRef(false); // uncontrolled component to track if the first time user toast message has been displayed
+  const { user, getUser, authLoading } = useAuth();
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  const playlistRestored = params.get("playlistRestored");
+  const firstTimeUser = params.get("firstTimeUser");
+
+  const toastShown = useRef({ firstTimeUser: false, playlistRestored: false });
+
   const { navigate } = useNavigate();
   const [profile, setProfile] = useState(null);
   const {
@@ -37,7 +44,6 @@ const Home = () => {
   };
 
   const linkAccount = async () => {
-    console.log("beginning account link...");
     try {
       await startSpotifyAuth("link");
     } catch (error) {
@@ -64,6 +70,8 @@ const Home = () => {
   };
 
   useEffect(() => {
+    if (authLoading || !user) return;
+
     const fetchProfile = async () => {
       startLoading("page");
       try {
@@ -72,7 +80,7 @@ const Home = () => {
       } catch (error) {
         console.error("Error fetching profile:", error);
         if (error.response && error.response.status === 401) {
-          // Unauthorized - user not logged in
+          // Unauthorized - user has expired token
           handleUnauthorized();
         }
         if (error.response && error.response.status === 403) {
@@ -85,7 +93,7 @@ const Home = () => {
     };
 
     fetchProfile();
-  }, []);
+  }, [authLoading, user]);
 
   useEffect(() => {
     if (profile) {
@@ -94,14 +102,24 @@ const Home = () => {
   }, [profile]);
 
   useEffect(() => {
-    if (!isLoading && firstTimeUser === "true" && !hasWelcomed.current) {
+    if (firstTimeUser === "true" && !toastShown.current.firstTimeUser) {
       toast.success(
-        "Welcome to SpotSave! Visit the 'About' page for instructions on how to use"
+        "Welcome to SpotSave! Select a playlist to keep safe. For help view the 'Help' page"
       );
-      hasWelcomed.current = true;
-      window.history.replaceState(null, "", "/home"); // Clean up the URL so it doesn't trigger again on refresh
+      toastShown.current.firstTimeUser = true;
     }
-  }, [isLoading, firstTimeUser]);
+
+    if (playlistRestored === "true" && !toastShown.current.playlistRestored) {
+      toast.success(
+        "Your playlist has been successfully restored! It will continue to be backed up automatically unless you remove it."
+      );
+      toastShown.current.playlistRestored = true;
+    }
+
+    if (firstTimeUser === "true" || playlistRestored === "true") {
+      window.history.replaceState(null, "", "/home");
+    }
+  }, [playlistRestored, firstTimeUser]);
 
   if (accountNotLinked) {
     return <AccountNotLinked linkAccount={() => linkAccount()} />;

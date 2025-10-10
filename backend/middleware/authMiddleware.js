@@ -8,7 +8,6 @@ const spotifyService = require("../services/spotifyService");
 // 3. if no valid token, return 401 error
 module.exports = async function (req, res, next) {
   try {
-    console.log("Validating tokens...");
     const userId = spotifyService.validateToken(req);
     if (!userId) {
       return res.status(401).json({ message: "Missing access token!" });

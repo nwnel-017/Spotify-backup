@@ -25,7 +25,7 @@ function App() {
           }
         />
         <Route
-          path="/home/:firstTimeUser"
+          path="/home"
           element={
             <PrivateRoute>
               <Home />

@@ -3,7 +3,7 @@ const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 // const createCsvWriter = require("csv-writer").createObjectCsvWriter;
-const spotifyService = require("./spotifyService");
+const spotifyService = require("./spotifyService"); // created a circular dependancy
 const supabase = require("../utils/supabase/supabaseClient");
 const { tracksToCsv } = require("../utils/file/csvUtils");
 const { generateHash } = require("../utils/crypto");
@@ -169,109 +169,9 @@ async function retrieveBackups({ accessToken, supabaseUser }) {
   return data;
 }
 
-async function createAndFillPlaylist(
-  accessToken,
-  userId,
-  playlistName,
-  trackIds
-) {
-  if (!playlistName || !trackIds || !accessToken || !userId) {
-    console.log("Missing params in backup service!");
-    throw new Error("Error in Service - missing params to create playlist");
-  }
-  try {
-    const playlistId = await createNewPlaylist(
-      accessToken,
-      userId,
-      playlistName
-    );
-    await addTracksToPlaylist(accessToken, playlistId, trackIds);
-    console.log("Playlist successfully restored!");
-  } catch (error) {
-    throw new Error("Error creating the restored playlist: " + error.message);
-  }
-}
-
-async function createNewPlaylist(accessToken, userId, playlistName) {
-  if (!accessToken || !playlistName || !userId) {
-    throw new Error("Missing playlist name!");
-  }
-
-  const now = new Date(Date.now());
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  const year = now.getFullYear();
-  const formattedDate = `${month}/${day}/${year}`;
-
-  const name = `${playlistName} - Restored ${formattedDate}`;
-
-  // To Do : we still need to grab spotify ID from middleware params
-  // and userId from middleware
-  try {
-    const res = await axios.post(
-      `${process.env.SPOTIFY_API_BASE_URL}/users/${userId}/playlists`,
-      {
-        name,
-        description: "Restored by SpotSave",
-        public: false,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    return res.data.id; // the new playlist id
-  } catch (error) {
-    console.error(
-      "Spotify API error:",
-      JSON.stringify(error.response.data, null, 2)
-    );
-
-    throw new Error("Error creating restored playlist: " + error.response.data);
-  }
-}
-
-async function addTracksToPlaylist(accessToken, playlistId, trackIds) {
-  if (!accessToken || !playlistId || !trackIds) {
-    throw new Error("Error restoring tracks to the playlist - missing params!");
-  }
-  const batchSize = 100; // max amount of songs spotify allows adding
-
-  for (let i = 0; i < trackIds.length; i += batchSize) {
-    const curBatch = trackIds.slice(i, i + batchSize);
-    const uris = curBatch.map((id) => `spotify:track:${id}`);
-
-    try {
-      await axios.post(
-        `${process.env.SPOTIFY_API_BASE_URL}/playlists/${playlistId}/tracks`,
-        {
-          uris,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    } catch (error) {
-      console.error(
-        "Spotify API error while adding tracks:",
-        error.response
-          ? JSON.stringify(error.response.data, null, 2)
-          : error.message
-      );
-      throw new Error("Error adding tracks to playlist");
-    }
-  }
-}
-
 module.exports = {
   handleWeeklyBackup,
   handleOneTimeBackup,
   retrieveBackups,
   removeBackup,
-  createAndFillPlaylist,
 };

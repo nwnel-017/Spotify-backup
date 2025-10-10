@@ -1,5 +1,5 @@
 import axios from "axios";
-import { supabase } from "../supabase/supabaseClient";
+import api from "../api/api";
 import csv from "../utils/csv";
 
 export const getSpotifyProfile = async () => {
@@ -134,6 +134,9 @@ export async function backupPlaylist(playlistId, playlistName) {
         responseType: "blob", // Set response type to blob
       }
     );
+    // const response = api.post(
+    //   `${process.env.REACT_APP_API_BASE_URL}/backup/single/${playlistId}`
+    // );
     const blob = response.data; // Access binary data from response.data
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -188,7 +191,6 @@ export async function deleteBackup(playlistId) {
 }
 
 export async function restorePlaylist(playlistId) {
-  console.log("Restoring playlist with ID: " + playlistId);
   if (!playlistId) {
     throw new Error("No backup ID provided to restorePlaylist");
   }
@@ -201,19 +203,6 @@ export async function restorePlaylist(playlistId) {
   }
   const { url } = await res.data;
   window.location.href = url;
-
-  // try {
-  //   await axios.post(
-  //     `${process.env.REACT_APP_API_BASE_URL}/backup/restore/${playlistId}`,
-  //     {},
-  //     {
-  //       withCredentials: true,
-  //     }
-  //   );
-  // } catch (error) {
-  //   console.log("Error restoring backup: " + error);
-  //   throw new Error("Error restoring backup: " + error.message);
-  // }
 }
 
 export async function uploadCSV(file, playlistName) {
