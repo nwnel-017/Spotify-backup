@@ -9,6 +9,7 @@ import AccountNotLinked from "../components/AccountNotLinked";
 import {
   getSpotifyProfile,
   startSpotifyAuth,
+  logoutUser,
 } from "../services/SpotifyService";
 import { supabase } from "../supabase/supabaseClient";
 import { toast } from "react-toastify";
@@ -24,7 +25,7 @@ const Home = () => {
 
   const toastShown = useRef({ firstTimeUser: false, playlistRestored: false });
 
-  const { navigate } = useNavigate();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const {
     startLoading,
@@ -51,13 +52,14 @@ const Home = () => {
     }
   };
 
-  const logout = async () => {
+  const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      const res = await logoutUser();
+      console.log(res);
     } catch (error) {
-      throw new error("Error ending user session: " + error);
+      throw new Error("Error ending user session: " + error);
     }
-    navigate("/login");
+    navigate("/");
   };
 
   const toggleSidebar = () => {
@@ -66,7 +68,7 @@ const Home = () => {
 
   const closeWindows = () => {
     setSidebarOpen(!sidebarOpen);
-    setViewBackups(!viewBackups);
+    setViewBackups(false);
   };
 
   useEffect(() => {
@@ -130,8 +132,6 @@ const Home = () => {
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
         rel="stylesheet"
       ></link>
-      {/* <h1 className={styles.headerText}>Home</h1>
-      {/* Profile */}
       <header className={styles.header}>
         <button onClick={() => toggleSidebar()} className={styles.menuIcon}>
           <span></span>
@@ -141,11 +141,13 @@ const Home = () => {
       </header>
       <Sidebar
         isOpen={sidebarOpen}
-        onClose={() => closeWindows()}
+        goHome={() => closeWindows()}
+        onClose={() => toggleSidebar()}
         viewBackups={() => {
           setViewBackups(!viewBackups);
           setSidebarOpen(!sidebarOpen);
         }}
+        logout={() => handleLogout()}
       />
       <div className={styles.componentContainer}>
         <div>

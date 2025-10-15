@@ -178,6 +178,21 @@ async function setAuthCookies(res, session) {
   }
 }
 
+function clearAuthCookies(res) {
+  res.clearCookie("sb-access-token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
+  });
+  res.clearCookie("sb-refresh-token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
+  });
+}
+
 async function exchangeCodeForToken(code) {
   try {
     const tokenRes = await fetch(`${process.env.SPOTIFY_TOKEN_URL}`, {
@@ -771,6 +786,7 @@ module.exports = {
   getPlaylists,
   getProfileInfo,
   setAuthCookies,
+  clearAuthCookies,
   validateToken,
   refreshSpotifyToken,
 };

@@ -85,7 +85,7 @@ const SignupPage = () => {
           onClick={login}
           className={`${styles.secondaryBtn} ${styles.smallText}`}
         >
-          Already Have an Account? Click Here
+          I Already Have an Account
         </button>
         <hr className={styles.divider} />
       </div>

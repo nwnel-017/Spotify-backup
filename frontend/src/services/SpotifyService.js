@@ -63,6 +63,15 @@ export const loginUser = async (email, password) => {
   return response;
 };
 
+export const logoutUser = async () => {
+  console.log("logging out...");
+  const response = await axios.get(
+    `${process.env.REACT_APP_API_BASE_URL}/auth/logout`,
+    { withCredentials: true }
+  );
+  return response.status;
+};
+
 // To Do: add third mode = "uploadPlaylist" -> we will have user login through OAuth when they restore a playlist
 export const startSpotifyAuth = async (mode = "link") => {
   console.log("starting auth with mode " + mode);

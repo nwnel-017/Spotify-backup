@@ -42,7 +42,6 @@
 }
 
 .fileUploadForm {
-  /* border: 2px solid blue; */
   padding: 1rem;
   display: flex;
   align-items: center;
@@ -70,7 +69,6 @@
 .secondaryBtn {
   background-color: var(--spotify-lightgray);
   color: var(--background-color);
-  /* border: 1px solid; */
   border: none;
   border-radius: 20px;
   padding: 0.5rem;
@@ -94,8 +92,10 @@
 }
 
 .smallText {
-  font-size: 0.75rem;
-  color: var(--background-color);
+  font-size: 0.85rem;
+  color: var(--text-gray);
+  max-width: 50%;
+  text-align: center;
 }
 
 .textFooter {
@@ -110,7 +110,6 @@
   align-items: center;
   gap: 1rem;
   margin-bottom: 2rem;
-  /* border: 3px solid red; */
 }
 
 .profileImage {
@@ -157,7 +156,6 @@
   list-style: none;
   padding: 0;
   margin: 0;
-  /* border: 3px solid pink; */
 }
 
 .playlistItem {
@@ -230,6 +228,7 @@
 .popup {
   background: var(--spotify-lightgray);
   width: 90vw;
+  min-height: 20vh;
   border-radius: 1rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   text-align: center;
@@ -307,6 +306,10 @@
   gap: 1rem;
 }
 
+.sidebarMenu li {
+  cursor: pointer;
+}
+
 .exitIcon {
   color: var(--text-gray);
   background-color: var(--background-color);
@@ -316,11 +319,41 @@
   top: 1rem;
   right: 1rem;
   font-size: 1.5rem;
+  cursor: pointer;
 }
 
 .laptopAnimation {
   width: 10rem;
   height: 10rem;
+}
+
+.appLogo {
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.iconWrapper {
+  display: grid;
+  place-items: center;
+  width: 8rem;
+  height: 8rem;
+  aspect-ratio: 1;
+  margin: 0;
+}
+
+.iconWrapper > * {
+  grid-area: 1 / 1;
+}
+
+.cloudIcon {
+  width: 8rem;
+}
+
+.musicIcon {
+  width: 3rem;
+  height: 3rem;
 }
 
 .landingPage {
@@ -329,21 +362,30 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  /* border: 3px solid yellow; */
+  align-items: center;
 }
 
 .contentContainer {
   width: 100%;
-  height: 50vh;
+  height: 100vh;
   display: flex;
   justify-content: center;
+  flex-direction: column;
   gap: 1rem;
   align-items: center;
 }
 
+.titleText {
+  font-size: 2rem;
+  color: var(--spotify-green);
+  font-weight: bold;
+}
+
 .landingContent {
-  /* width: 30rem; */
-  /* border: 2px solid orange; */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5em;
 }
 
 .landingContent h1 {
@@ -352,27 +394,34 @@
   font-weight: bold;
 }
 
-.landingButtons {
+.innerContent {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  padding-top: 1rem;
-  /* border: 2px solid pink; */
-  gap: 0.5rem;
+  justify-content: space-evenly;
+  /* gap: 1rem; */
+  /* border: 2px solid white; */
 }
 
-.loginBtnHollow {
+.landingButtons {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  padding-top: 1rem;
+  gap: 1.2rem;
+}
+
+.signupBtnHollow {
   outline: none;
-  border: 1px solid var(--text-gray);
+  border: 1px solid var(--spotify-green);
   border-radius: 20px;
   color: var(--spotify-text-color);
   background-color: var(--background-color);
   cursor: pointer;
-  /* flex: 0.5; */
-  width: 90%;
+  width: 40%;
+  height: 2rem;
 }
 
-.loginBtnHollow:hover {
+.signupBtnHollow:hover {
   background-color: var(--spotify-lightgray);
 }
 
@@ -391,18 +440,17 @@
   background-color: var(--spotify-lightgray);
 }
 
-.signupBtnHollow {
+.loginBtnHollow {
   outline: none;
   border: none;
   border-radius: 20px;
   color: black;
   background-color: var(--spotify-lightgreen);
   cursor: pointer;
-  /* flex: 1; */
-  width: 90%;
+  width: 40%;
 }
 
-.signupBtnHollow:hover {
+.loginBtnHollow:hover {
   background-color: #a5f2c0;
 }
 
@@ -437,7 +485,80 @@
   color: var(--text-gray);
 }
 
+@media (min-width: 480px) {
+  .loginPage {
+    width: 50%;
+    margin: 0 auto;
+  }
+
+  .navButton {
+    width: 80%;
+  }
+}
+
+@media (min-width: 768px) {
+  .laptopAnimation {
+    width: 15rem;
+    height: 15rem;
+  }
+
+  .landingContent h1 {
+    font-size: 2rem;
+  }
+
+  .navButton {
+    width: 50%;
+  }
+
+  .login {
+    max-width: 30%;
+  }
+}
+
 @media (min-width: 1024px) {
+  .iconWrapper {
+    width: 10rem;
+    height: 10rem;
+  }
+
+  .cloudIcon {
+    width: 10rem;
+  }
+
+  .musicIcon {
+    width: 4rem;
+    height: 4rem;
+  }
+
+  .titleText {
+    font-size: 2.5rem;
+  }
+
+  .smallText {
+    font-size: 1rem;
+  }
+
+  .signupBtnHollow {
+    font-size: 1rem;
+  }
+
+  .loginBtnHollow {
+    font-size: 1rem;
+  }
+
+  .laptopAnimation {
+    width: 30rem;
+    height: 30rem;
+  }
+
+  .navButton {
+    width: 90%;
+  }
+
+  .loginPage {
+    max-width: 30%;
+  }
+
   .headerText {
     font-size: 2rem;
   }
@@ -472,11 +593,6 @@
     margin-bottom: 0;
   }
 
-  .popup {
-    width: 50vw;
-    height: 50vh;
-  }
-
   .playlistsSection {
     width: 60vw;
   }
@@ -484,5 +600,18 @@
   .componentContainer {
     display: flex;
     justify-content: center;
+  }
+
+  .sidebar {
+    width: 20%;
+  }
+
+  .popup {
+    width: 30vw;
+    min-height: 20vh;
+  }
+
+  .popup span {
+    font-size: 0.8em;
   }
 }

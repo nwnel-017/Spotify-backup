@@ -80,6 +80,17 @@ exports.login = async (req, res) => {
   }
 };
 
+exports.logout = async (req, res) => {
+  console.log("logging out user...");
+
+  try {
+    spotifyService.clearAuthCookies(res);
+    return res.status(200).json({ message: "Logout successful" });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to end session" });
+  }
+};
+
 exports.search = async (req, res) => {
   try {
     const results = await spotifyService.searchTracks(req.query.q);

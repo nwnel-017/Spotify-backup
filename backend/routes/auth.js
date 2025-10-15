@@ -5,6 +5,7 @@ const {
   getSession,
   // getUser,
   login,
+  logout,
   signup,
   linkSpotify,
   loginWithSpotify,
@@ -17,6 +18,9 @@ router.post("/signup", signup);
 
 // Standard Login
 router.post("/login", login);
+
+// logout
+router.get("/logout", logout);
 
 // get session
 router.get("/me", getSession);
@@ -32,9 +36,5 @@ router.get("/linkAccount", authMiddleware, linkSpotify);
 
 // 2. Handle callback and exchange code for access token
 router.get("/callback", handleCallback);
-
-router.get("/logout", (req, res) => {
-  console.log("logout not implemented yet");
-});
 
 module.exports = router;

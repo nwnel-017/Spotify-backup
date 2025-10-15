@@ -75,7 +75,7 @@ const Popup = ({ playlist, show, onClose }) => {
             onClick={() => handleWeeklyBackup(playlistId, playlistName)}
           >
             <FontAwesomeIcon icon={faArrowRotateRight} />
-            Keep my playlist secure with a weekly backup
+            <span>Keep my playlist secure with a weekly backup</span>
           </div>
         </div>
       </div>

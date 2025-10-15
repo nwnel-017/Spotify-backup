@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Player } from "@lottiefiles/react-lottie-player";
+import Logo from "../components/Logo";
 import styles from "../pages/styles/Home.module.css";
 
 const LandingPage = () => {
@@ -7,33 +8,31 @@ const LandingPage = () => {
   return (
     <div className={styles.landingPage}>
       <div className={styles.contentContainer}>
-        <Player
-          autoplay
-          loop
-          src="/animations/LaptopAnimation.json"
-          className={styles.laptopAnimation}
-        />
-        <div className={styles.landingContent}>
-          <h1>Listen Freely, Securely</h1>
-          <div className={styles.smallText}>
-            Keep your playlists safe, everywhere
-          </div>
-          <div className={styles.landingButtons}>
-            <button
-              className={styles.loginBtnHollow}
-              onClick={() => navigate("/signup")}
-            >
-              Signup
-            </button>
-            <button
-              className={`${styles.signupBtnHollow} ${styles.footerText}`}
-              onClick={() => navigate("/login")}
-            >
-              Login
-            </button>
+        <div className={styles.innerContent}>
+          <Logo />
+          <div className={styles.landingContent}>
+            <div className={styles.titleText}>SpotSave</div>
+            <div className={styles.smallText}>
+              Keep your playlists safe - backup and restore anytime
+            </div>
+            <div className={styles.landingButtons}>
+              <button
+                className={styles.signupBtnHollow}
+                onClick={() => navigate("/signup")}
+              >
+                Sign Up
+              </button>
+              <button
+                className={`${styles.loginBtnHollow} ${styles.footerText}`}
+                onClick={() => navigate("/login")}
+              >
+                Login
+              </button>
+            </div>
           </div>
         </div>
       </div>
+      {/* <Logo /> */}
     </div>
   );
 };
