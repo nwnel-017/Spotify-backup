@@ -1,15 +1,10 @@
 import axios from "axios";
-import api from "../api/api";
 import csv from "../utils/csv";
+import api from "../utils/axios/api";
 
 export const getSpotifyProfile = async () => {
   try {
-    const response = await axios.get(
-      `${process.env.REACT_APP_API_BASE_URL}/spotify/profile`,
-      {
-        withCredentials: true,
-      }
-    );
+    const response = await api.get("/spotify/profile");
     console.log("Fetched Spotify profile:", response.data);
     return response.data;
   } catch (error) {
@@ -54,8 +49,6 @@ export const loginUser = async (email, password) => {
     }
   );
 
-  console.log("Login response:", response);
-
   if (response.status !== 200) {
     throw new Error(`Login failed: ${response.status}`);
   }
@@ -72,7 +65,6 @@ export const logoutUser = async () => {
   return response.status;
 };
 
-// To Do: add third mode = "uploadPlaylist" -> we will have user login through OAuth when they restore a playlist
 export const startSpotifyAuth = async (mode = "link") => {
   console.log("starting auth with mode " + mode);
 
@@ -88,7 +80,7 @@ export const startSpotifyAuth = async (mode = "link") => {
     endpoint = `${process.env.REACT_APP_API_BASE_URL}/auth/loginWithSpotify`;
   }
   try {
-    const res = await axios.get(endpoint, { withCredentials: true });
+    const res = await api.get(endpoint);
 
     if (res.status !== 200) {
       throw new Error("backend returned: " + res.status);
@@ -101,24 +93,15 @@ export const startSpotifyAuth = async (mode = "link") => {
 };
 
 export const fetchUserPlaylists = async (offset = 0, limit = 50) => {
-  const res = await axios.get(
-    `${process.env.REACT_APP_API_BASE_URL}/spotify/playlists`,
-    {
-      withCredentials: true,
-      params: { offset, limit },
-    }
-  );
+  const res = await api.get("/spotify/playlists", {
+    params: { offset, limit },
+  });
   return res.data;
 };
 
 export async function getMyBackups() {
   try {
-    const res = await axios.get(
-      `${process.env.REACT_APP_API_BASE_URL}/backup/backups`,
-      {
-        withCredentials: true,
-      }
-    );
+    const res = await api.get("/backup/backups");
 
     return res.data;
   } catch (error) {
@@ -135,19 +118,15 @@ export async function backupPlaylist(playlistId, playlistName) {
       `${process.env.REACT_APP_API_BASE_URL}/backup/single/${playlistId}`
   );
   try {
-    const response = await axios.post(
-      `${process.env.REACT_APP_API_BASE_URL}/backup/single/${playlistId}`,
+    const response = await api.post(
+      `/backup/single/${playlistId}`,
       {},
       {
-        withCredentials: true,
-        responseType: "blob", // Set response type to blob
+        responseType: "blob",
       }
     );
-    // const response = api.post(
-    //   `${process.env.REACT_APP_API_BASE_URL}/backup/single/${playlistId}`
-    // );
     const blob = response.data; // Access binary data from response.data
-    const url = window.URL.createObjectURL(blob);
+    const url = window.URL.createObjectURL(blob); // error here
     const link = document.createElement("a");
     const fileName = csv.getFileName(playlistName);
     link.href = url;
@@ -164,13 +143,7 @@ export async function backupPlaylist(playlistId, playlistName) {
 export async function triggerWeeklyBackup(playlistId, playlistName) {
   console.log("calling weekly backup API"); // successfully reached
   try {
-    await axios.post(
-      `${process.env.REACT_APP_API_BASE_URL}/backup/weekly`,
-      { playlistId, playlistName }, // POST body
-      {
-        withCredentials: true,
-      }
-    );
+    await api.post("/backup/weekly", { playlistId, playlistName });
   } catch (error) {
     throw {
       message: error.response?.data?.message || error.message,
@@ -186,12 +159,7 @@ export async function deleteBackup(playlistId) {
   }
   console.log("Deleting backup with ID: " + playlistId);
   try {
-    const res = await axios.delete(
-      `${process.env.REACT_APP_API_BASE_URL}/backup/delete/${playlistId}`,
-      {
-        withCredentials: true,
-      }
-    );
+    const res = await api.delete(`/backup/delete/${playlistId}`);
     return res.data;
   } catch (error) {
     console.log("Error deleting backup: " + error);
@@ -204,8 +172,7 @@ export async function restorePlaylist(playlistId) {
     throw new Error("No backup ID provided to restorePlaylist");
   }
 
-  const endpoint = `${process.env.REACT_APP_API_BASE_URL}/backup/restore/${playlistId}`;
-  const res = await axios.post(endpoint, {}, { withCredentials: true });
+  const res = await api.post(`/backup/restore/${playlistId}`, {});
 
   if (res.status !== 200) {
     throw new Error("backend returned: " + res.status);
@@ -221,13 +188,9 @@ export async function uploadCSV(file, playlistName) {
   formData.append("file", file);
   formData.append("playlistName", playlistName);
   try {
-    await axios.post(
-      `${process.env.REACT_APP_API_BASE_URL}/backup/upload`,
-      formData,
-      {
-        withCredentials: true,
-      }
-    );
+    const res = await api.post("/backup/upload", formData);
+    const { url } = await res.data;
+    window.location.href = url;
   } catch (error) {
     console.error("Error uploading CSV file:", error);
     throw new Error("Error uploading CSV file: " + error.message);

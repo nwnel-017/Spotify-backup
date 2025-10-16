@@ -18,7 +18,6 @@ const upload = multer({
 // basic validation -> file must be a csv and cannot exceed size limit
 const restoreCsvMiddleware = (req, res, next) => {
   const singleUpload = upload.single("file"); // field name in frontend FormData
-  console.log("Hit multer middleware");
 
   singleUpload(req, res, (err) => {
     if (err) {
@@ -55,7 +54,6 @@ const restoreCsvMiddleware = (req, res, next) => {
       console.log("rows:", rows);
 
       const trackIds = rows.filter((id) => /^[A-Za-z0-9]{22}$/.test(id)); // validating track ids
-      console.log("trackIds:", trackIds);
 
       if (trackIds.length === 0) {
         console.log("No valid track IDs found");

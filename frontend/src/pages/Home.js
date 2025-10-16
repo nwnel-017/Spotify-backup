@@ -39,9 +39,9 @@ const Home = () => {
   // To Do: implement logout to refresh supabase JWT
   // if that fails, log out user
   // right now -> everytime the page is refreshed our user is logged out
-  const handleUnauthorized = () => {
+  const handleUnauthorized = async () => {
     console.log("User is not logged in. Redirecting to login page.");
-    // logout();
+    await logoutUser();
   };
 
   const linkAccount = async () => {

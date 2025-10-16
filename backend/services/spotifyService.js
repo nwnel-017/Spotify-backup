@@ -9,6 +9,7 @@ const crypto = require("../utils/crypto");
 // const backupService = require("./backupService"); // we created a circular dependancy
 const { validateInput } = require("../utils/authValidation/validator");
 const { json } = require("express");
+const { parse } = require("dotenv");
 
 let accessToken = "";
 const tokenUrl = process.env.SPOTIFY_TOKEN_URL;
@@ -121,10 +122,9 @@ async function loginUser(email, password) {
 
 function validateToken(req) {
   const token = req.cookies?.["sb-access-token"];
-
-  if (!token) {
-    throw new Error("Missing token!"); // error here -> shouldn't be throwing an error if there is no access token
-  }
+  // if (!token) {
+  //   throw new Error("Missing token!"); // error here -> shouldn't be throwing an error if there is no access token
+  // }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -270,9 +270,19 @@ async function handleOAuth(code, parsedState) {
       spotifyId,
       tokens
     );
+  } else if (parsedState.flow === "fileRestore") {
+    // To Do
+    // 1.) call spotifyService.restorePlaylistFromStorage()
   } else {
     throw new Error("Invalid flow");
   }
+}
+
+async function restorePlaylistFromStorage() {
+  // To Do:
+  // 1.) verify nonce from file_restore_nonces -> retrieve userId and playlistName
+  // 2.) use nonce to retrieve playlist from storage
+  // 3.) with trackIds -> call createAndFillPlaylist()
 }
 
 async function loginWithSpotify(spotifyId, tokens) {
@@ -499,7 +509,13 @@ async function retrieveTracksAndName(userId, playlistId) {
   return { playlistName, trackIds };
 }
 
-async function buildOAuthUrl({ flow, playlistId, userId }) {
+async function buildOAuthUrl({
+  flow,
+  playlistId,
+  playlistName = "",
+  trackIds = null,
+  userId,
+}) {
   const scope =
     "playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public";
 
@@ -521,6 +537,38 @@ async function buildOAuthUrl({ flow, playlistId, userId }) {
     }
 
     statePayload = { flow, nonce, playlistId };
+  } else if (flow === "fileRestore") {
+    // To Do:
+    // 1.) verify userId, playlistName, and trackIds both exist
+    // 2.) generate nonce
+    // 3.) filePath = `restores/${nonce}.json`
+    // 4.) insert trackIds into supabase storage at filePath
+    // 5.) store nonce in file_restore_nonces -> nonce, storage_path: filePath, playlist_name,
+    // 6.) build statePayload -> contains flow and nonce
+    if (!userId || !playlistName || !trackIds) {
+      throw new Error("Missing userId or playlistName!");
+    }
+    try {
+      const nonce = crypto.generateNonce();
+      const filePath = `restores/${nonce}.json`;
+      await supabase.storage
+        .from("playlist_files")
+        .upload(filePath, JSON.stringify({ trackIds }), {
+          contentType: "application/json",
+        });
+
+      await supabase.from("file_restore_nonces").upsert({
+        nonce,
+        user_id: userId,
+        storage_path: filePath,
+        playlist_name: playlistName,
+        expires_at: new Date(Date.now() + 5 * 60 * 1000),
+      });
+      statePayload = { flow, nonce };
+    } catch (error) {
+      console.log("Error building OAuth URL: " + error);
+      throw new Error("Error building OAuth URL: " + error);
+    }
   } else if (flow === "link") {
     if (!userId) {
       throw new Error("Error: must have user id to link!");

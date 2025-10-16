@@ -6,7 +6,10 @@ const {
   getMyBackups,
   deleteBackup,
 } = require("../controllers/BackupController");
-const { restorePlaylist } = require("../controllers/spotifyController");
+const {
+  restorePlaylist,
+  fileRestore,
+} = require("../controllers/spotifyController");
 const authMiddleware = require("../middleware/authMiddleware");
 const spotifyAuthMiddleware = require("../middleware/spotifyAuthMiddleware");
 const restoreCsvMiddleware = require("../middleware/restoreCsvMiddleware");
@@ -39,7 +42,8 @@ router.post(
   authMiddleware,
   spotifyAuthMiddleware,
   restoreCsvMiddleware,
-  restorePlaylist
+  // restorePlaylist
+  fileRestore
 );
 
 router.delete(

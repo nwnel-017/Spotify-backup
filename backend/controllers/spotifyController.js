@@ -152,11 +152,13 @@ exports.linkSpotify = async (req, res) => {
 
 exports.restorePlaylist = async (req, res) => {
   try {
-    // const playlistId = req.params.id;
     const playlistId = req.params.id;
     const supabaseUser = req.supabaseUser;
 
     if (!supabaseUser || !playlistId) {
+      console.log("supabase id: " + supabaseUser);
+      console.log("playlist id: " + playlistId); ///////////////missing playlist id -> there is no playlist id if upload -> we need playlistName
+      console.log("Missing supababase user id or playlist id!");
       return res.status(400).json({ message: "Missing parameters!" });
     }
 
@@ -172,62 +174,89 @@ exports.restorePlaylist = async (req, res) => {
   }
 };
 
-// To Do: eventually remove - being replaced by top 3 functions
-exports.handleSpotifyOAuth = async (req, res) => {
-  console.log("reached connectSpotify controller");
-  const isLinkFlow = !!req.supabaseUser;
+exports.fileRestore = async (req, res) => {
+  try {
+    const { playlistName, supabaseUser, trackIds } = req;
 
-  // const { flow, playlistId } = req.query;
-
-  const scope =
-    "playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public";
-  let statePayload;
-
-  if (isLinkFlow) {
-    // Retrieve session from headers and put in state
-    const supabaseUser = req.supabaseUser;
-    if (!supabaseUser) {
-      return res.status(401).json({ error: "Must be logged in to link" });
+    if (!supabaseUser || !playlistName || !trackIds) {
+      console.log("Error in backend: Missing authentication");
+      return res
+        .status(401)
+        .json({ message: "Error: missing required parameters" });
     }
 
-    //generate a nonce
-    const nonce = crypto.randomBytes(16).toString("hex");
-
-    const { error } = await supabase.from("spotify_link_nonces").upsert({
-      nonce,
-      user_id: supabaseUser,
-      expires_at: new Date(Date.now() + 1000 * 60 * 5),
+    const url = await spotifyService.buildOAuthUrl({
+      flow: "fileRestore",
+      playlistName: playlistName,
+      trackIds: trackIds,
+      userId: supabaseUser,
     });
 
-    if (error) {
-      console.log("error inserting nonce: ", error);
-      return res.status(500).json({ error: "database error" });
-    }
-
-    statePayload = { flow: flow, nonce: nonce };
-  } else if (flow === "login") {
-    statePayload = { flow: flow };
-  } else if (flow === "restorePlaylist") {
-    if (!playlistId) {
-      return res
-        .status(400)
-        .json({ message: "Missing playlist id parameter!" });
-    }
-    statePayload = { flow: flow, nonce: nonce, playlistId: playlistId };
+    res.json({ url });
+  } catch (error) {
+    console.log("Error from controller: " + error);
+    return res
+      .status(500)
+      .json({ message: "Error restoring file to playlist: " + error });
   }
-  console.log("state payload: " + statePayload);
-  const queryParams = new URLSearchParams({
-    response_type: "code",
-    scope: scope,
-    redirect_uri: process.env.REDIRECT_URI,
-    client_id: process.env.SPOTIFY_CLIENT_ID,
-    show_dialog: "true",
-    state: JSON.stringify(statePayload), // Either contains supabase session or null depending on whether we are logging in / linking account
-  });
-
-  const url = `https://accounts.spotify.com/authorize?${queryParams}`;
-  res.json({ url }); //send url back to frontend
 };
+
+// To Do: eventually remove - being replaced by top 3 functions
+// exports.handleSpotifyOAuth = async (req, res) => {
+//   console.log("reached connectSpotify controller");
+//   const isLinkFlow = !!req.supabaseUser;
+
+//   // const { flow, playlistId } = req.query;
+
+//   const scope =
+//     "playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public";
+//   let statePayload;
+
+//   if (isLinkFlow) {
+//     // Retrieve session from headers and put in state
+//     const supabaseUser = req.supabaseUser;
+//     if (!supabaseUser) {
+//       return res.status(401).json({ error: "Must be logged in to link" });
+//     }
+
+//     //generate a nonce
+//     const nonce = crypto.randomBytes(16).toString("hex");
+
+//     const { error } = await supabase.from("spotify_link_nonces").upsert({
+//       nonce,
+//       user_id: supabaseUser,
+//       expires_at: new Date(Date.now() + 1000 * 60 * 5),
+//     });
+
+//     if (error) {
+//       console.log("error inserting nonce: ", error);
+//       return res.status(500).json({ error: "database error" });
+//     }
+
+//     statePayload = { flow: flow, nonce: nonce };
+//   } else if (flow === "login") {
+//     statePayload = { flow: flow };
+//   } else if (flow === "restorePlaylist") {
+//     if (!playlistId) {
+//       return res
+//         .status(400)
+//         .json({ message: "Missing playlist id parameter!" });
+//     }
+//     statePayload = { flow: flow, nonce: nonce, playlistId: playlistId };
+//   }
+//   console.log("state payload: " + statePayload);
+//   const queryParams = new URLSearchParams({
+//     response_type: "code",
+//     scope: scope,
+//     redirect_uri: process.env.REDIRECT_URI,
+//     client_id: process.env.SPOTIFY_CLIENT_ID,
+//     show_dialog: "true",
+//     state: JSON.stringify(statePayload), // Either contains supabase session or null depending on whether we are logging in / linking account
+//   });
+
+//   const url = `https://accounts.spotify.com/authorize?${queryParams}`;
+//   res.json({ url }); //send url back to frontend
+// };
 
 exports.handleCallback = async (req, res) => {
   const { code, state } = req.query;
@@ -255,7 +284,10 @@ exports.handleCallback = async (req, res) => {
       return res.redirect(
         `${process.env.CLIENT_URL}/home?firstTimeUser=${true}`
       );
-    } else if (parsedState.flow === "restore") {
+    } else if (
+      parsedState.flow === "restore" ||
+      parsedState.flow === "fileRestore"
+    ) {
       return res.redirect(
         `${process.env.CLIENT_URL}/home?playlistRestored=${true}`
       );

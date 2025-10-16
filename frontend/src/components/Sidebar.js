@@ -7,15 +7,6 @@ import { supabase } from "../supabase/supabaseClient";
 const Sidebar = ({ isOpen, goHome, onClose, viewBackups, logout }) => {
   const navigate = useNavigate();
 
-  // const logout = async () => {
-  //   try {
-  //     await supabase.auth.signOut();
-  //   } catch (error) {
-  //     throw new error("Error ending user session: " + error);
-  //   }
-  //   navigate("/login");
-  // };
-
   return (
     <div className={`${styles.sidebar} ${isOpen ? styles.open : ""}`}>
       <ul className={styles.sidebarMenu}>
@@ -28,6 +19,7 @@ const Sidebar = ({ isOpen, goHome, onClose, viewBackups, logout }) => {
         </li>
         <li onClick={() => goHome()}>Home</li>
         <li onClick={() => viewBackups()}>My Backups</li>
+        <li onClick={() => navigate("/help")}>Help</li>
         <li onClick={() => logout()}>Logout</li>
       </ul>
     </div>
