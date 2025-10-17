@@ -12,8 +12,8 @@ const LandingPage = () => {
           <Logo />
           <div className={styles.landingContent}>
             <div className={styles.titleText}>SpotSave</div>
-            <div className={styles.smallText}>
-              Keep your playlists safe - backup and restore anytime
+            <div className={styles.subTitleText}>
+              Keep your playlists safe for free - backup and restore anytime
             </div>
             <div className={styles.landingButtons}>
               <button

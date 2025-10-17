@@ -4,7 +4,7 @@ const Help = ({ show, onClose }) => {
   return (
     <div className={`${styles.overlay} ${styles.active}`} onClick={onClose}>
       <div className={`${styles.popup} ${styles.scrollableWindow}`}>
-        <h1>About Us</h1>
+        <h1>About</h1>
         <div className={styles.popupText}>
           <div>
             SpotSave is designed for music enthusiasts who want to keep their

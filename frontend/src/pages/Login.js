@@ -1,15 +1,22 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect, useRef } from "react";
 import { SignupPage } from "./Signup";
 import { useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { LoadingContext } from "../context/LoadingContext";
 import styles from "./styles/Home.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCirclePlay } from "@fortawesome/free-solid-svg-icons";
+import { faCirclePlus } from "@fortawesome/free-solid-svg-icons";
 import { faSpotify } from "@fortawesome/free-brands-svg-icons";
 import { startSpotifyAuth, loginUser } from "../services/SpotifyService";
-import { validateInput } from "./../utils/validator";
 import { useAuth } from "../context/AuthContext";
+import { toast } from "react-toastify";
 
 const LoginPage = () => {
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  const loginError = params.get("loginError ");
+  const toastShown = useRef({ loginError: false });
   const { startLoading, stopLoading } = useContext(LoadingContext);
   const navigate = useNavigate();
   const [message, setMessage] = useState("");
@@ -42,6 +49,13 @@ const LoginPage = () => {
     }
   };
 
+  useEffect(() => {
+    if (loginError === "true" && !toastShown.current.loginError) {
+      toast.error("Please create an account first!");
+      toastShown.current.loginError = true;
+    }
+  }, [loginError]);
+
   return (
     <div className={`${styles.dashboard} ${styles.loginPage}`}>
       <h1>Login</h1>
@@ -71,10 +85,10 @@ const LoginPage = () => {
       </div>
       <button
         className={`${styles.secondaryBtn} ${styles.spotifyLogin}`}
-        onClick={() => startSpotifyAuth("login")}
+        onClick={() => navigate("/signup")}
       >
-        <FontAwesomeIcon icon={faSpotify} />
-        Login with Spotify
+        <FontAwesomeIcon icon={faCirclePlus} />
+        Create Account
       </button>
     </div>
   );

@@ -121,10 +121,11 @@ async function loginUser(email, password) {
 }
 
 function validateToken(req) {
-  const token = req.cookies?.["sb-access-token"];
-  // if (!token) {
-  //   throw new Error("Missing token!"); // error here -> shouldn't be throwing an error if there is no access token
-  // }
+  const token = req.cookies?.["sb-access-token"]; // this is undefined
+
+  console.log(
+    "found token in cookies when calling getSession from AuthContext: " + token
+  );
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -252,7 +253,7 @@ async function exchangeCodeForToken(code) {
 }
 
 async function handleOAuth(code, parsedState) {
-  const tokens = await exchangeCodeForToken(code); // returns plaintext tokens
+  const tokens = await exchangeCodeForToken(code); // returns access and refresh tokens
   const spotifyId = await getSpotifyId(tokens.accessToken); // retrieve spotify id
 
   if (!tokens.accessToken || !tokens.refreshToken || !spotifyId) {
@@ -324,10 +325,9 @@ async function restorePlaylistFromStorage(nonce, spotifyId, tokens) {
 }
 
 async function loginWithSpotify(spotifyId, tokens) {
-  // Find existing supabase user by spotifyId
-
   const { accessToken, refreshToken, expiresAt } = tokens;
 
+  // we have all these correct
   if (!accessToken || !refreshToken || !expiresAt) {
     throw new Error("Missing tokens in loginWithSpotify!");
   }
@@ -352,22 +352,22 @@ async function loginWithSpotify(spotifyId, tokens) {
       spotify_user: spotifyId,
       access_token: encryptedAccess,
       refresh_token: encryptedRefresh,
-      expires_at: expiresAt.toISOString(),
+      expires_at: expiresAt, /////////// need to verify -> can we read the expires at correctly?
     },
     { onConflict: ["user_id"] }
   );
 
   if (upsertError) throw upsertError;
 
-  // Create Supabase session (admin privilege required)
-  const { data: sessionData, error: sessionError } =
-    await supabase.auth.admin.createSession({
-      user_id: existing.user_id,
-    });
+  // At this point we have supabase Id -> we now need to create a session
+  const { access_token, refresh_token } = generateTokens(existing.user_id);
 
-  if (sessionError) throw sessionError;
+  if (!access_token || !refresh_token) {
+    console.log("Error creating new session in loginWithSpotify!");
+    throw new Error("Error: failed to create a session!");
+  }
 
-  return { session: sessionData.session };
+  return { access_token, refresh_token };
 }
 
 async function restorePlaylist(nonce, playlistId, spotifyId, tokens) {
@@ -576,13 +576,6 @@ async function buildOAuthUrl({
 
     statePayload = { flow, nonce, playlistId };
   } else if (flow === "fileRestore") {
-    // To Do:
-    // 1.) verify userId, playlistName, and trackIds both exist
-    // 2.) generate nonce
-    // 3.) filePath = `restores/${nonce}.json`
-    // 4.) insert trackIds into supabase storage at filePath
-    // 5.) store nonce in file_restore_nonces -> nonce, storage_path: filePath, playlist_name,
-    // 6.) build statePayload -> contains flow and nonce
     if (!userId || !playlistName || !trackIds) {
       throw new Error("Missing userId or playlistName!");
     }
@@ -625,6 +618,7 @@ async function buildOAuthUrl({
     statePayload = { flow, nonce };
   } else if (flow === "login") {
     // implement this!
+    statePayload = { flow };
   } else {
     throw new Error("Invalid flow!");
   }
@@ -646,7 +640,7 @@ async function linkSpotifyAccount(nonce, spotifyId, tokens) {
   const { accessToken, refreshToken, expiresAt } = tokens;
 
   if (!accessToken || !refreshToken || !expiresAt) {
-    throw new Error("Missing tokens in loginWithSpotify!");
+    throw new Error("Missing tokens!");
   }
 
   // Verify nonce

@@ -275,10 +275,11 @@ exports.handleCallback = async (req, res) => {
   }
 
   try {
-    const result = await spotifyService.handleOAuth(code, parsedState);
+    const session = await spotifyService.handleOAuth(code, parsedState);
 
     if (parsedState.flow === "login") {
-      spotifyService.setAuthCookies(res, result.session);
+      spotifyService.setAuthCookies(res, session);
+      return res.redirect(`${process.env.CLIENT_URL}/home`); // error happens here -> cookies are wiped when we redirect to client url
     }
     if (parsedState.flow === "link") {
       return res.redirect(
@@ -298,6 +299,7 @@ exports.handleCallback = async (req, res) => {
   } catch (err) {
     console.error(err);
     return res.status(500).send("OAuth callback failed");
+    // return res.redirect(`${process.env.CLIENT_URL}/login?loginError=${true}`);
   }
 };
 
