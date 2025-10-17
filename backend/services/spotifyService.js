@@ -193,6 +193,7 @@ function clearAuthCookies(res) {
   });
 }
 
+// To Do: change to axios
 async function exchangeCodeForToken(code) {
   try {
     const tokenRes = await fetch(`${process.env.SPOTIFY_TOKEN_URL}`, {
@@ -271,18 +272,55 @@ async function handleOAuth(code, parsedState) {
       tokens
     );
   } else if (parsedState.flow === "fileRestore") {
-    // To Do
-    // 1.) call spotifyService.restorePlaylistFromStorage()
+    return restorePlaylistFromStorage(parsedState.nonce, spotifyId, tokens);
   } else {
     throw new Error("Invalid flow");
   }
 }
 
-async function restorePlaylistFromStorage() {
-  // To Do:
-  // 1.) verify nonce from file_restore_nonces -> retrieve userId and playlistName
-  // 2.) use nonce to retrieve playlist from storage
-  // 3.) with trackIds -> call createAndFillPlaylist()
+async function restorePlaylistFromStorage(nonce, spotifyId, tokens) {
+  const { accessToken } = tokens;
+  if (!nonce || !spotifyId || !accessToken) {
+    throw new Error("Error: Missing tokens!");
+  }
+
+  try {
+    // verify nonce from file_restore_nonces -> retrieve userId and playlistName
+    const { data } = await supabase
+      .from("file_restore_nonces")
+      .select("*")
+      .eq("nonce", nonce)
+      .single();
+
+    if (!data) {
+      throw new Error("Failed to get nonce from database!");
+    }
+
+    const path = data.storage_path;
+    const playlistName = data.playlist_name;
+    // const supabaseUser = data.user_id;
+
+    // use nonce to retrieve playlist from storage
+    const { data: file } = await supabase.storage
+      .from("playlist_files")
+      .download(`${path}`);
+
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const text = buffer.toString("utf-8");
+
+    const json = JSON.parse(text);
+    const trackIds = json.trackIds;
+
+    // clean up database
+    await supabase.storage.from("playlist_files").remove(`${path}`);
+    await supabase.from("file_restore_nonces").delete().eq("nonce", nonce);
+
+    // restore new playlist
+    await createAndFillPlaylist(accessToken, spotifyId, playlistName, trackIds);
+  } catch (error) {
+    throw new Error("Error: " + error);
+  }
 }
 
 async function loginWithSpotify(spotifyId, tokens) {

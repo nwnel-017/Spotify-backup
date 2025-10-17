@@ -182,8 +182,6 @@ export async function restorePlaylist(playlistId) {
 }
 
 export async function uploadCSV(file, playlistName) {
-  console.log("Uploading CSV file:", file);
-
   const formData = new FormData();
   formData.append("file", file);
   formData.append("playlistName", playlistName);

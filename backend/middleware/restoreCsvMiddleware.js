@@ -34,7 +34,6 @@ const restoreCsvMiddleware = (req, res, next) => {
       return res.status(400).json({ error: "Playlist name is required" });
     }
     req.playlistName = playlistName;
-    console.log("passed initial checks!"); // hit here
     try {
       console.log("req.file info:", {
         originalname: req.file.originalname,
@@ -43,8 +42,6 @@ const restoreCsvMiddleware = (req, res, next) => {
       });
       // Convert buffer to string so controller can parse it
       const csvContent = req.file.buffer.toString("utf-8");
-
-      console.log("csvContent preview:", csvContent.slice(0, 200));
 
       // split into rows, trim, and filter out empty lines
       const rows = csvContent
@@ -68,7 +65,6 @@ const restoreCsvMiddleware = (req, res, next) => {
       console.log("Error trying to parse file! ");
       return res.status(500).json({ error: "Failed to process file" });
     }
-    console.log("passing control to controller from middleware...");
     next();
   });
 };
