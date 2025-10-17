@@ -5,13 +5,13 @@ import { useAuth } from "../context/AuthContext";
 import Playlists from "./Playlists";
 import Sidebar from "../components/Sidebar";
 import Backups from "./Backups";
+import Help from "./Help";
 import AccountNotLinked from "../components/AccountNotLinked";
 import {
   getSpotifyProfile,
   startSpotifyAuth,
   logoutUser,
 } from "../services/SpotifyService";
-import { supabase } from "../supabase/supabaseClient";
 import { toast } from "react-toastify";
 import "../App.css";
 import styles from "./styles/Home.module.css";
@@ -21,6 +21,7 @@ const Home = () => {
   const { search } = useLocation();
   const params = new URLSearchParams(search);
   const playlistRestored = params.get("playlistRestored");
+  const fileRestored = params.get("fileRestored");
   const firstTimeUser = params.get("firstTimeUser");
 
   const toastShown = useRef({ firstTimeUser: false, playlistRestored: false });
@@ -35,10 +36,8 @@ const Home = () => {
   const [accountNotLinked, setAccountNotLinked] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [viewBackups, setViewBackups] = useState(false);
+  const [viewHelpPage, setViewHelpPage] = useState(false);
 
-  // To Do: implement logout to refresh supabase JWT
-  // if that fails, log out user
-  // right now -> everytime the page is refreshed our user is logged out
   const handleUnauthorized = async () => {
     console.log("User is not logged in. Redirecting to login page.");
     await logoutUser();
@@ -69,6 +68,7 @@ const Home = () => {
   const closeWindows = () => {
     setSidebarOpen(!sidebarOpen);
     setViewBackups(false);
+    setViewHelpPage(false);
   };
 
   useEffect(() => {
@@ -118,10 +118,15 @@ const Home = () => {
       toastShown.current.playlistRestored = true;
     }
 
+    if (fileRestored === "true" && !toastShown.current.fileRestored) {
+      toast.success("Your playlist has been successfully restored!");
+      toastShown.current.fileRestored = true;
+    }
+
     if (firstTimeUser === "true" || playlistRestored === "true") {
       window.history.replaceState(null, "", "/home");
     }
-  }, [playlistRestored, firstTimeUser]);
+  }, [playlistRestored, fileRestored, firstTimeUser]);
 
   if (accountNotLinked) {
     return <AccountNotLinked linkAccount={() => linkAccount()} />;
@@ -145,6 +150,10 @@ const Home = () => {
         onClose={() => toggleSidebar()}
         viewBackups={() => {
           setViewBackups(!viewBackups);
+          setSidebarOpen(!sidebarOpen);
+        }}
+        viewHelp={() => {
+          setViewHelpPage(!viewHelpPage);
           setSidebarOpen(!sidebarOpen);
         }}
         logout={() => handleLogout()}
@@ -172,6 +181,14 @@ const Home = () => {
               />
             )}
           </div>
+          {viewHelpPage ? (
+            <Help
+              show={viewHelpPage}
+              onClose={() => setViewHelpPage(!viewHelpPage)}
+            />
+          ) : (
+            ""
+          )}
         </div>
       </div>
     </div>

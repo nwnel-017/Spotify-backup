@@ -4,7 +4,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabase/supabaseClient";
 
-const Sidebar = ({ isOpen, goHome, onClose, viewBackups, logout }) => {
+const Sidebar = ({
+  isOpen,
+  goHome,
+  onClose,
+  viewBackups,
+  viewHelp,
+  logout,
+}) => {
   const navigate = useNavigate();
 
   return (
@@ -19,7 +26,7 @@ const Sidebar = ({ isOpen, goHome, onClose, viewBackups, logout }) => {
         </li>
         <li onClick={() => goHome()}>Home</li>
         <li onClick={() => viewBackups()}>My Backups</li>
-        <li onClick={() => navigate("/help")}>Help</li>
+        <li onClick={() => viewHelp()}>Help</li>
         <li onClick={() => logout()}>Logout</li>
       </ul>
     </div>

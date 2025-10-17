@@ -26,7 +26,7 @@ const Backups = () => {
     if (!selectedPlaylistId) {
       setSelectedPlaylistId(id);
     } else {
-      setSelectedPlaylistId(null); // this gets hit sometimes when we select a new playlist
+      setSelectedPlaylistId(null);
     }
   };
 

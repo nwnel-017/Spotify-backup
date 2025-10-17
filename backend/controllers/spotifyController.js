@@ -284,12 +284,13 @@ exports.handleCallback = async (req, res) => {
       return res.redirect(
         `${process.env.CLIENT_URL}/home?firstTimeUser=${true}`
       );
-    } else if (
-      parsedState.flow === "restore" ||
-      parsedState.flow === "fileRestore"
-    ) {
+    } else if (parsedState.flow === "restore") {
       return res.redirect(
         `${process.env.CLIENT_URL}/home?playlistRestored=${true}`
+      );
+    } else if (parsedState.flow === "fileRestore") {
+      return res.redirect(
+        `${process.env.CLIENT_URL}/home?fileRestored=${true}`
       );
     } else {
       return res.redirect(`${process.env.CLIENT_URL}/home`);

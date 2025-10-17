@@ -3,6 +3,7 @@ import { useState, useContext } from "react";
 import axios from "axios";
 import { LoadingContext } from "../context/LoadingContext";
 import { uploadCSV } from "../services/SpotifyService";
+import { toast } from "react-toastify";
 
 const FileRestore = ({ active, onClose }) => {
   const [file, setFile] = useState(null);
@@ -20,21 +21,20 @@ const FileRestore = ({ active, onClose }) => {
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!file || !playlistName) {
-      alert("Please choose a playlist name and select a file to upload!");
+      toast.error("Please choose a playlist name and select a file to upload!");
       return;
     }
 
     try {
       startLoading("overlay");
       await uploadCSV(file, playlistName);
-      alert("File uploaded successfully!");
       setFile(null);
       setPlaylistName("");
       onClose();
     } catch (error) {
       console.error("Error uploading file: " + error);
       // throw new Error("Error uploading file: " + error);
-      alert("Error uploading file!");
+      toast.error("Error uploading file!");
     } finally {
       stopLoading("overlay");
     }

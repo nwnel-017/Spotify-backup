@@ -86,6 +86,12 @@
   border-top: 1px solid var(--spotify-lightgray);
 }
 
+.popupDivider {
+  flex: 1;
+  border: none;
+  border-top: 1px solid var(--spotify-text-color);
+}
+
 .dividerContainer {
   display: flex;
   align-items: center;
@@ -235,6 +241,34 @@
   transform: scale(0);
   opacity: 0;
   transition: transform 0.3s ease opacity 0.3s ease;
+}
+
+.popupText {
+  font-size: 0.9rem;
+  margin-right: 2rem;
+  margin-left: 2rem;
+  margin-bottom: 2rem;
+}
+
+.scrollableWindow {
+  max-height: 80vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--spotify-lightgray);
+}
+
+.scrollableWindow::-webkit-scrollbar {
+  width: 8px; /* width of the scrollbar */
+}
+
+.scrollableWindow::-webkit-scrollbar-thumb {
+  background-color: var(--spotify-lightgray); /* scrollbar handle color */
+  border-radius: 4px;
+  border: 2px solid var(--spotify-darkgray); /* space around thumb */
+}
+
+.popupText div {
+  margin-bottom: 0.8rem;
 }
 
 .overlay.active .popup {

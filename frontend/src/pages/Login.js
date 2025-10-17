@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { SignupPage } from "./Signup";
-import { supabase } from "../supabase/supabaseClient";
 import { useNavigate } from "react-router-dom";
+import { LoadingContext } from "../context/LoadingContext";
 import styles from "./styles/Home.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpotify } from "@fortawesome/free-brands-svg-icons";
@@ -10,6 +10,7 @@ import { validateInput } from "./../utils/validator";
 import { useAuth } from "../context/AuthContext";
 
 const LoginPage = () => {
+  const { startLoading, stopLoading } = useContext(LoadingContext);
   const navigate = useNavigate();
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
@@ -24,6 +25,7 @@ const LoginPage = () => {
     }
 
     try {
+      startLoading("overlay");
       const res = await loginUser(email, password);
       console.log("Login successful");
       if (res.status !== 200) {
@@ -32,7 +34,7 @@ const LoginPage = () => {
         return;
       }
       await getUser();
-
+      stopLoading("overlay");
       navigate("/home");
     } catch (error) {
       console.error("Login error:", error);
@@ -62,9 +64,6 @@ const LoginPage = () => {
           Login
         </button>
       </form>
-      {/* <button onClick={handleLogin} className={styles.submitButton}>
-        Login
-      </button> */}
       <div className={styles.dividerContainer}>
         <hr className={styles.divider} />
         <p>or</p>

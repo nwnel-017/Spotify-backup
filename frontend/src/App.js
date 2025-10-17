@@ -6,6 +6,7 @@ import Login from "./pages/Login.js";
 import SignupPage from "./pages/Signup.js";
 import Restore from "./pages/Restore.js";
 import Home from "./pages/Home.js";
+import Help from "./pages/Help.js";
 import Backups from "./pages/Backups.js";
 import LandingPage from "./pages/LandingPage.js";
 import GlobalLoading from "./context/GlobalLoading";
@@ -41,6 +42,7 @@ function App() {
           }
         />
         <Route path="/login" element={<Login />} />
+        <Route path="/help" element={<Help />} />
         <Route
           path="/backups"
           element={
