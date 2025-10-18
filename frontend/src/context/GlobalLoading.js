@@ -1,5 +1,3 @@
-import { useContext } from "react";
-import { LoadingContext } from "./LoadingContext";
 import styles from "../pages/styles/Home.module.css";
 import { Player } from "@lottiefiles/react-lottie-player";
 import { useLoading } from "./LoadingContext";

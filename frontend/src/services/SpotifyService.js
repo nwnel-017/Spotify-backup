@@ -154,6 +154,7 @@ export async function triggerWeeklyBackup(playlistId, playlistName) {
 }
 
 export async function deleteBackup(playlistId) {
+  console.log("hit deleteBackup() in service! deleting playlist " + playlistId);
   if (!playlistId) {
     throw new Error("No backup ID provided to deleteBackup");
   }

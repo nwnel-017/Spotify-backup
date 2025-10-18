@@ -6,6 +6,8 @@ import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import { LoadingProvider } from "./context/LoadingContext";
 import { AuthProvider } from "./context/AuthContext.js";
+import { QueryClientProvider } from "@tanstack/react-query";
+import queryClient from "./utils/query/QueryClient.js";
 import GlobalLoading from "./context/GlobalLoading";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -16,10 +18,12 @@ root.render(
   <React.StrictMode>
     <BrowserRouter>
       <LoadingProvider>
-        <AuthProvider>
-          <App />
-          <ToastContainer />
-        </AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <App />
+            <ToastContainer />
+          </AuthProvider>
+        </QueryClientProvider>
       </LoadingProvider>
     </BrowserRouter>
   </React.StrictMode>

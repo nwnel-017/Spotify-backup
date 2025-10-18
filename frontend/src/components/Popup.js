@@ -1,5 +1,6 @@
 import { useContext } from "react";
 import { LoadingContext } from "../context/LoadingContext";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import styles from "../pages/styles/Home.module.css";
 import { faArrowDown } from "@fortawesome/free-solid-svg-icons";
 import { faArrowRotateRight } from "@fortawesome/free-solid-svg-icons";
@@ -12,6 +13,7 @@ import { toast } from "react-toastify";
 
 // To Do: move trigger weekly backup and one time backup functionality to this page
 const Popup = ({ playlist, show, onClose }) => {
+  const queryClient = useQueryClient();
   const { startLoading, stopLoading } = useContext(LoadingContext);
   let playlistId, playlistName;
 
@@ -28,14 +30,28 @@ const Popup = ({ playlist, show, onClose }) => {
   };
 
   const handleWeeklyBackup = async (playlistId, playlistName) => {
-    startLoading("overlay");
-    try {
-      await triggerWeeklyBackup(playlistId, playlistName);
+    backupMutation.mutate({ playlistId, playlistName }); // now using tan stack query to invalidate query
+  };
+
+  const backupMutation = useMutation({
+    mutationFn: async ({ playlistId, playlistName }) => {
+      if (!playlistId || !playlistName) {
+        console.log("Missing playlist Id or playlist name!");
+        toast.error("Something went wrong while backing up");
+      }
+      return await triggerWeeklyBackup(playlistId, playlistName);
+    },
+    onMutate: () => {
+      startLoading("overlay");
+    },
+    onSuccess: (data) => {
       toast.success(
         "Successfully backed up playlist! View 'Backups' page to manage your backup"
       );
-    } catch (error) {
-      console.log(error);
+      queryClient.invalidateQueries(["spotify-backups"]);
+    },
+    onError: (error) => {
+      console.log("backup failed: " + error);
       if (error.code === "MAX_BACKUPS_REACHED") {
         toast.error(
           "You have already reached the limit of 5 scheduled backups! Please upgrade your account to save more playlists, or save as a CSV file"
@@ -45,10 +61,11 @@ const Popup = ({ playlist, show, onClose }) => {
       } else {
         toast.error("Something went wrong while backing up");
       }
-    } finally {
+    },
+    onSettled: () => {
       stopLoading("overlay");
-    }
-  };
+    },
+  });
 
   if (playlist) {
     playlistId = playlist[0];

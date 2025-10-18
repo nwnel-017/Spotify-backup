@@ -1,4 +1,5 @@
-import { useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext, useMemo } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   fetchUserPlaylists,
   backupPlaylist,
@@ -10,11 +11,12 @@ import { LoadingContext, useLoading } from "../context/LoadingContext";
 import { useAuth } from "../context/AuthContext";
 import { faArrowDown } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { usePlaylists } from "../hooks/usePlaylists";
 
 const Playlists = ({ stopParentLoader }) => {
   const { user, authLoading } = useAuth();
-  const [allPlaylists, setAllPlaylists] = useState([]);
-  const [filteredPlaylists, setFilteredPlaylists] = useState([]);
+  // const [allPlaylists, setAllPlaylists] = useState([]);
+  // const [filteredPlaylists, setFilteredPlaylists] = useState([]);
   const { startLoading, stopLoading } = useLoading();
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(0);
@@ -23,104 +25,34 @@ const Playlists = ({ stopParentLoader }) => {
 
   const pageLimit = 5;
   // amount of playlists to retrieve per request
-  const apiLimit = 50;
 
-  // Retry-aware API call with rate-limit logging
-  const fetchPlaylistsWithRetry = async (offset, limit, retries = 3) => {
-    for (let attempt = 0; attempt < retries; attempt++) {
-      try {
-        const response = await fetchUserPlaylists(offset, limit);
+  // using hooks/usePlaylists to handle retrieving all playlists with caching
+  // uses tan stack query to cache all the playlists
+  const {
+    data: allPlaylists = [],
+    isLoading,
+    isError,
+    refetch,
+  } = usePlaylists();
 
-        // If response.status exists, check for 429
-        if (response.status === 429) {
-          const retryAfter = parseInt(
-            response.headers.get("Retry-After") || "1",
-            10
-          );
-          console.warn(
-            `Rate limit hit at offset ${offset}. Retrying in ${retryAfter}s (attempt ${
-              attempt + 1
-            })`
-          );
-          await new Promise((resolve) =>
-            setTimeout(resolve, retryAfter * 1000)
-          );
-          continue; // retry
-        }
-
-        return response; // success
-      } catch (error) {
-        console.error(`Error fetching offset ${offset}:`, error);
-      }
-    }
-    throw new Error(
-      `Failed to fetch playlists at offset ${offset} after ${retries} retries`
-    );
-  };
-
-  // To get all playlists quickly while ensuring we retrieve correct playlists
-  const fetchAllPlaylists = async (limit = 50) => {
-    let all = [];
-
-    // Retrieve first page -> get total playlist count from response.total
-    // const firstPage = await fetchUserPlaylists(0, apiLimit);
-    const firstPage = await fetchPlaylistsWithRetry(0, apiLimit);
-
-    all = firstPage.items || []; // set to first page -> 50 items
-    const total = firstPage.total || 0;
-
-    // Prepare batches of offsets to run in parallel
-    const batchSize = 5; // number of pages to fetch in parallel per batch
-    let offsets = [];
-    for (let offset = apiLimit; offset < total; offset += apiLimit) {
-      offsets.push(offset);
-    }
-
-    // Process batches sequentially to avoid rate limits
-    for (let i = 0; i < offsets.length; i += batchSize) {
-      const batchOffsets = offsets.slice(i, i + batchSize);
-      const pages = await Promise.all(
-        // batchOffsets.map((offset) => fetchUserPlaylists(offset, apiLimit))
-        batchOffsets.map((offset) => fetchPlaylistsWithRetry(offset, apiLimit))
-      );
-      all = all.concat(pages.flatMap((p) => p.items || []));
-    }
-
-    // Removing duplicates
-    const unique = Array.from(new Map(all.map((p) => [p.id, p])).values());
-
-    return unique; // array of unique playlists
-  };
-
+  // new useEffect based on isLoading from usePlaylists()
   useEffect(() => {
-    if (authLoading || !user) return;
+    if (!startLoading || !stopLoading) return;
 
-    const fetchPlaylists = async () => {
+    if (isLoading) {
       startLoading("page");
-      try {
-        const playlists = await fetchAllPlaylists();
-        setAllPlaylists(playlists);
-        setFilteredPlaylists(playlists);
-      } catch (error) {
-        console.error("Error fetching playlists", error);
-      } finally {
-        // setLoading({ active: false, type: null }); // turn off solid loader
-        stopLoading("page");
-        stopParentLoader?.(); // notify Home loader to stop
-      }
-    };
+      return () => stopLoading("page"); // cleanup function
+    } else {
+      stopLoading("page");
+      stopParentLoader?.();
+    }
+  }, [isLoading]);
 
-    fetchPlaylists();
-  }, [authLoading, user]);
-
-  // Handle search query
-  useEffect(() => {
-    const filtered = allPlaylists.filter((playlist) =>
+  const filteredPlaylists = useMemo(() => {
+    return (allPlaylists || []).filter((playlist) =>
       playlist.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
-    setFilteredPlaylists(filtered);
-    setPage(0); // Reset to first page on search
-  }, [searchQuery, allPlaylists]);
+  }, [allPlaylists, searchQuery]);
 
   const paginatedPlaylists = (filteredPlaylists || []).slice(
     page * pageLimit,

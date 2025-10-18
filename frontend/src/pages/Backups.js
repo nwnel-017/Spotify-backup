@@ -1,6 +1,8 @@
 import { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { getMyBackups } from "../services/SpotifyService";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useBackups } from "../hooks/useBackups";
 import styles from "./styles/Home.module.css";
 import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -13,13 +15,21 @@ import {
 } from "../services/SpotifyService";
 import { LoadingContext } from "../context/LoadingContext";
 import { toast } from "react-toastify";
+import queryClient from "../utils/query/QueryClient";
 
 const Backups = () => {
-  const [backups, setBackups] = useState([]);
   const [showOptions, setShowOptions] = useState(false);
   const [showFileRestore, setShowFileRestore] = useState(false);
   const [selectedPlaylistId, setSelectedPlaylistId] = useState(null);
   const { startLoading, stopLoading } = useContext(LoadingContext);
+
+  const {
+    data: backups = [],
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = useBackups();
 
   const toggleOptions = (id) => {
     setShowOptions(!showOptions);
@@ -39,20 +49,41 @@ const Backups = () => {
     }
   };
 
-  const removeBackup = async () => {
-    const playlistId = selectedPlaylistId;
-    try {
+  // using mutation to remove backup from tan stack query data
+  const removeBackupMutation = useMutation({
+    mutationFn: async (id) => {
+      if (!id) {
+        throw new Error("Missing playlist id!");
+      }
+      return await deleteBackup(id);
+    },
+    onMutate: () => {
       startLoading("overlay");
-      const res = await deleteBackup(playlistId);
-      toast.success("Backup successfully removed!");
-    } catch (error) {
-      console.error("Error deleting backup: " + error);
-      toast.error("Error deleting backup. Please try again later!");
-    } finally {
-      stopLoading("overlay");
+    },
+    onSuccess: (_, playlistId) => {
+      console.log("id returned in mutation fuction: " + playlistId);
+      queryClient.setQueryData(["spotify-backups"], (oldBackups) => {
+        return oldBackups?.filter((b) => b.playlist_id !== playlistId);
+      });
+      toast.success("Backup removed successfully!");
       setSelectedPlaylistId(null);
-      setBackups(backups.filter((b) => b.playlist_id !== playlistId));
+    },
+    onError: (error) => {
+      console.error("Failed to delete backup:", error);
+      toast.error("Failed to remove backup. Please try again.");
+    },
+    onSettled: () => {
+      stopLoading("overlay");
+    },
+  });
+
+  const removeBackup = () => {
+    const id = selectedPlaylistId;
+    if (!id) {
+      console.log("Missing playlist id!");
+      toast.error("Error removing playlist. Please try again!");
     }
+    removeBackupMutation.mutate(id);
   };
 
   const restore = async () => {
@@ -73,20 +104,15 @@ const Backups = () => {
   };
 
   useEffect(() => {
-    const fetchBackups = async () => {
-      startLoading("page");
-      try {
-        const res = await getMyBackups();
-        setBackups(res);
-      } catch (error) {
-        console.log("Error retrieving backups from Backup component: " + error);
-      } finally {
-        stopLoading("page");
-      }
-    };
+    if (!startLoading || !stopLoading) return;
 
-    fetchBackups();
-  }, []);
+    if (isFetching) {
+      startLoading("page");
+      return () => stopLoading("page");
+    } else {
+      stopLoading("page");
+    }
+  }, [isFetching]);
 
   return (
     <div>

@@ -336,7 +336,7 @@ exports.getPlaylists = async (req, res) => {
     );
     res.json(response);
   } catch (error) {
-    console.error("Error fetching playlists", error.response.data);
+    console.error("Error fetching playlists", error);
     res.status(500).json({ error: "Failed to fetch playlists" });
   }
 };
