@@ -167,11 +167,17 @@ const Playlists = ({ stopParentLoader }) => {
                   {playlist.tracks.total} tracks
                 </div>
               </div>
-              <FontAwesomeIcon
-                icon={faArrowDown}
-                className={styles.downloadIcon}
-                onClick={() => displayBackupOptions(playlist.id, playlist.name)}
-              />
+              <div className={styles.iconContainer}>
+                {" "}
+                <FontAwesomeIcon
+                  icon={faArrowDown}
+                  // size="sm"
+                  className={styles.downloadIcon}
+                  onClick={() =>
+                    displayBackupOptions(playlist.id, playlist.name)
+                  }
+                />
+              </div>
             </li>
           ))
         ) : (

@@ -107,10 +107,12 @@ const Backups = () => {
                 <div className={styles.playlistTitle}>
                   {playlist.playlist_name}
                 </div>
-                <FontAwesomeIcon
-                  icon={faCheck}
-                  className={styles.downloadIcon}
-                />
+                <div className={styles.iconContainer}>
+                  <FontAwesomeIcon
+                    icon={faCheck}
+                    className={styles.downloadIcon}
+                  />
+                </div>
               </li>
             ))
           : "Playlists not found"}
