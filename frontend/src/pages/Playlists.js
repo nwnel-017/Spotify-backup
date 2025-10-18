@@ -15,8 +15,6 @@ import { usePlaylists } from "../hooks/usePlaylists";
 
 const Playlists = ({ stopParentLoader }) => {
   const { user, authLoading } = useAuth();
-  // const [allPlaylists, setAllPlaylists] = useState([]);
-  // const [filteredPlaylists, setFilteredPlaylists] = useState([]);
   const { startLoading, stopLoading } = useLoading();
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(0);
@@ -24,7 +22,6 @@ const Playlists = ({ stopParentLoader }) => {
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
 
   const pageLimit = 5;
-  // amount of playlists to retrieve per request
 
   // using hooks/usePlaylists to handle retrieving all playlists with caching
   // uses tan stack query to cache all the playlists
@@ -49,6 +46,8 @@ const Playlists = ({ stopParentLoader }) => {
   }, [isLoading]);
 
   const filteredPlaylists = useMemo(() => {
+    setPage(0);
+    console.log("searching on page " + page);
     return (allPlaylists || []).filter((playlist) =>
       playlist.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -103,7 +102,6 @@ const Playlists = ({ stopParentLoader }) => {
                 {" "}
                 <FontAwesomeIcon
                   icon={faArrowDown}
-                  // size="sm"
                   className={styles.downloadIcon}
                   onClick={() =>
                     displayBackupOptions(playlist.id, playlist.name)
