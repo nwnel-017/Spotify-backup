@@ -45,9 +45,11 @@ const Playlists = ({ stopParentLoader }) => {
     }
   }, [isLoading]);
 
-  const filteredPlaylists = useMemo(() => {
+  useEffect(() => {
     setPage(0);
-    console.log("searching on page " + page);
+  }, [searchQuery]);
+
+  const filteredPlaylists = useMemo(() => {
     return (allPlaylists || []).filter((playlist) =>
       playlist.name.toLowerCase().includes(searchQuery.toLowerCase())
     );

@@ -104,15 +104,21 @@ const Backups = () => {
   };
 
   useEffect(() => {
+    console.log("entered the suspected useeffect");
     if (!startLoading || !stopLoading) return;
+
+    let stop = false;
 
     if (isFetching) {
       startLoading("page");
-      return () => stopLoading("page");
-    } else {
-      stopLoading("page");
+      stop = true;
     }
-  }, [isFetching]);
+
+    return () => {
+      if (stop) stopLoading("page");
+    };
+  }, [isFetching, startLoading, stopLoading]);
+  // }, []);
 
   return (
     <div>
