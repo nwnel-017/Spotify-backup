@@ -18,18 +18,25 @@ export const signupUser = async (email, password) => {
     throw new Error("Missing email and / or password!");
   }
 
-  const res = await axios.post(
-    `${process.env.REACT_APP_API_BASE_URL}/auth/signup`,
-    {
-      email,
-      password,
-    },
-    { withCredentials: true }
-  );
+  try {
+    const res = await axios.post(
+      `${process.env.REACT_APP_API_BASE_URL}/auth/signup`,
+      {
+        email,
+        password,
+      },
+      { withCredentials: true }
+    );
 
-  if (res.status !== 200) {
-    console.log(res.status);
-    throw new Error("Error signing up!");
+    if (res.status !== 200) {
+      console.log(
+        "Unexpected status returned: " + res.status + ": " + res.statusText
+      );
+    }
+    return res.data;
+  } catch (error) {
+    console.log("Error logging in: " + error);
+    throw new Error("Error logging in!");
   }
 };
 

@@ -1,16 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { signup } from "../services/SpotifyService";
 import { supabase } from "../supabase/supabaseClient";
 import { signupUser } from "../services/SpotifyService";
 import styles from "./styles/Home.module.css";
 import { toast } from "react-toastify";
+import { LoadingContext } from "../context/LoadingContext";
 
 const SignupPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordReenter, setPasswordReenter] = useState("");
   const navigate = useNavigate();
+  const { startLoading, stopLoading } = useContext(LoadingContext);
 
   const handleSignUp = async (e) => {
     e.preventDefault();
@@ -28,23 +30,18 @@ const SignupPage = () => {
     }
 
     try {
+      startLoading("overlay");
       const res = await signupUser(email, password);
-      console.log("retrieved " + res + "from signup. now navigating to home!");
-      navigate("/Home");
-      // toast.success(
-      //   "Verification email sent! Please follow the link sent to your email to verify!"
-      // );
+      toast.success(
+        "Verification email has been sent! Please follow the link to verify your account"
+      );
     } catch (error) {
       console.log("Error signing up!");
       toast.error("There was an error signing up");
       return;
+    } finally {
+      stopLoading("overlay");
     }
-
-    toast.success(
-      "Verification email has been sent! Please follow the link to verify your account"
-    );
-
-    console.log("Signup successful");
   };
 
   const login = () => {

@@ -118,7 +118,6 @@ const Backups = () => {
       if (stop) stopLoading("page");
     };
   }, [isFetching, startLoading, stopLoading]);
-  // }, []);
 
   return (
     <div>

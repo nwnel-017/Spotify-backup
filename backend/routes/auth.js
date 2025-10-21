@@ -7,6 +7,7 @@ const {
   login,
   logout,
   signup,
+  verifyUser,
   linkSpotify,
   loginWithSpotify,
   refreshToken,
@@ -15,6 +16,9 @@ const {
 
 // First Time Sign up
 router.post("/signup", signup);
+
+// Email verification
+router.get("/verify", verifyUser);
 
 // Standard Login
 router.post("/login", login);

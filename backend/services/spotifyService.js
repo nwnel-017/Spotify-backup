@@ -2,6 +2,7 @@
 require("dotenv").config();
 const axios = require("axios");
 const supabase = require("../utils/supabase/supabaseClient");
+const nodemailer = require("../utils/email/nodemailer");
 // const { getSupabase } = require("../utils/supabase/supabaseClient");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
@@ -37,25 +38,27 @@ function authValidation(email, password) {
 }
 
 async function signupUser(req, res, email, password) {
-  // To Do - remove supabase auth
-  // insert into new users table in supabase
-  // sign a JWT with the user id
-  // store JWT in cookies
-  // return success message to client
-  console.log("signing up user...");
-
   if (!email || !password) {
     throw new Error("missing email and / or password!");
+  }
+
+  const { data: existingUser } = await supabase
+    .from("users")
+    .select("*")
+    .eq("email", email)
+    .single();
+
+  if (existingUser) {
+    throw new Error("User already exists in system!");
   }
 
   // hash password
   const hashed = await bcrypt.hash(password, 12);
 
-  console.log("hashed password: " + hashed);
-
+  // insert user into database
   const { data, error } = await supabase
     .from("users")
-    .insert([{ email, password: hashed }])
+    .insert([{ email, password: hashed, verified: false }])
     .select("id")
     .single();
 
@@ -68,19 +71,64 @@ async function signupUser(req, res, email, password) {
     throw new Error("Error inserting user into database!");
   }
 
-  const userId = data.id;
+  // send verificaton email
+  try {
+    const emailToken = generateEmailVerificationToken(email);
+    await nodemailer.sendVerificationEmail(email, emailToken);
+  } catch (error) {
+    throw new Error("Error sending verification email!");
+  }
+
+  // const userId = data.id;
 
   // generate new jwt
   //store in cookies
+  // try {
+  //   const newTokens = generateTokens(userId); // success
+
+  //   setAuthCookies(res, newTokens);
+  // } catch (error) {
+  //   console.log("Error issuing new tokens: " + error);
+  //   throw new Error(error.message);
+  // }
+
+  // To Do:
+  // 1.) user should be stored with verified = false
+  // 2.) use node mailer to generate a one time email verification jwt
+  // 3.) send email with url to /verify endpoint with token in url
+  // 4.) return a success to the user - toast message tells them to check email
+}
+
+// To Do: generate a new session and return
+async function verifyUser(token) {
+  if (!token) {
+    console.log("Missing token in user verification");
+    throw new Error("Missing authentication!");
+  }
+
   try {
-    const newTokens = generateTokens(userId); // success
+    // verify the access token
+    const decoded = jwt.verify(token, process.env.EMAIL_VERIFICATION_SECRET);
+    const email = decoded.email;
 
-    setAuthCookies(res, newTokens);
+    const { data } = await supabase
+      .from("users")
+      .update({ verified: true })
+      .eq("email", email)
+      .select("*");
 
-    console.log("JWT generated: " + newTokens);
+    const id = data?.[0]?.id;
+
+    if (!id) {
+      console.log("failed to return userId from supabase!");
+      throw new Error("Missing returned Id");
+    }
+
+    const newSession = generateTokens(id);
+    return newSession;
   } catch (error) {
-    console.log("Error issuing new tokens: " + error);
-    throw new Error(error.message);
+    console.log("Failed to authenticate user: " + error);
+    throw new Error("Failed to authentiate user!");
   }
 }
 
@@ -158,6 +206,22 @@ function generateTokens(id) {
   return { access_token, refresh_token };
 }
 
+function generateEmailVerificationToken(email) {
+  if (!email) {
+    console.log("Error: cannot generate a token without an email!");
+  }
+
+  try {
+    const token = jwt.sign({ email }, process.env.EMAIL_VERIFICATION_SECRET, {
+      expiresIn: "1d",
+    });
+    return token;
+  } catch (tokenError) {
+    console.log("Error generating token: " + tokenError);
+    throw new Error("Failed to generate token!");
+  }
+}
+
 async function setAuthCookies(res, session) {
   try {
     res.cookie("sb-access-token", session.access_token, {
@@ -231,6 +295,8 @@ async function exchangeCodeForToken(code) {
       const profileRes = await fetch("https://api.spotify.com/v1/me", {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
+      const rawResponse = await profileRes.text();
+      console.log("Raw response body from profileRes:", rawResponse);
       spotifyProfile = await profileRes.json();
     } catch (error) {
       console.error("Error fetching Spotify profile:", error);
@@ -857,6 +923,7 @@ async function getProfileInfo(accessToken) {
 module.exports = {
   authValidation,
   signupUser,
+  verifyUser,
   loginUser,
   refreshAccessToken,
   exchangeCodeForToken,

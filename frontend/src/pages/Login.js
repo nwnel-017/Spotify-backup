@@ -45,7 +45,9 @@ const LoginPage = () => {
       navigate("/home");
     } catch (error) {
       console.error("Login error:", error);
-      setMessage("Login failed: " + error.message);
+      toast.error("Incorrect email and password combination!");
+    } finally {
+      stopLoading("overlay");
     }
   };
 

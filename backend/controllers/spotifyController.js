@@ -28,7 +28,6 @@ exports.signup = async (req, res) => {
     );
     {
     }
-    console.log(sanitizedEmail + " " + sanitizedPassword); // undefined undefined
 
     if (!sanitizedEmail || !sanitizedPassword) {
       return res.status(400).json({ message: "Error signing up!" });
@@ -45,6 +44,27 @@ exports.signup = async (req, res) => {
   } catch (error) {
     console.log("Error in signup process: " + error); // getSupabase is not a function
     return res.status(500).json({ message: "Error signing up!" });
+  }
+};
+
+exports.verifyUser = async (req, res) => {
+  console.log("Hit /verifyUser route");
+
+  const { token } = req.query;
+  if (!token) {
+    console.log("error - missing access token!");
+    return res.status(400).json({ message: "Missing credentials!" });
+  }
+
+  try {
+    const session = await spotifyService.verifyUser(token);
+    spotifyService.setAuthCookies(res, session);
+    return res.redirect(`${process.env.CLIENT_URL}/home?firstTimeUser=${true}`);
+  } catch (error) {
+    console.log("error verifying user: " + error);
+    return res.status(500).json({
+      message: "Failed to verify user! Verification email may be expired",
+    });
   }
 };
 
