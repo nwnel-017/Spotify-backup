@@ -45,22 +45,32 @@ export const loginUser = async (email, password) => {
     throw new Error("Email and password are required");
   }
 
-  const response = await axios.post(
-    `${process.env.REACT_APP_API_BASE_URL}/auth/login`,
-    {
-      email,
-      password,
-    },
-    {
-      withCredentials: true,
+  try {
+    const response = await axios.post(
+      `${process.env.REACT_APP_API_BASE_URL}/auth/login`,
+      {
+        email,
+        password,
+      },
+      {
+        withCredentials: true,
+      }
+    );
+    return response;
+  } catch (error) {
+    if (error.response) {
+      const { status, data } = error.response;
+      const err = new Error(data.message);
+      err.status = status;
+      err.code = data.message;
+      throw err;
+    } else {
+      const err = new Error("Network error");
+      err.status = 0;
+      err.code = "NETWORK_ERROR";
+      throw err;
     }
-  );
-
-  if (response.status !== 200) {
-    throw new Error(`Login failed: ${response.status}`);
   }
-
-  return response;
 };
 
 export const logoutUser = async () => {

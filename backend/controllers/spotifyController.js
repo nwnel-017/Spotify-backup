@@ -33,12 +33,7 @@ exports.signup = async (req, res) => {
       return res.status(400).json({ message: "Error signing up!" });
     }
 
-    await spotifyService.signupUser(
-      req,
-      res,
-      sanitizedEmail,
-      sanitizedPassword
-    );
+    await spotifyService.signupUser(sanitizedEmail, sanitizedPassword);
     // await spotifyService.setAuthCookies(res, result.session);
     return res.status(200).json({ message: "success!" });
   } catch (error) {
@@ -96,7 +91,14 @@ exports.login = async (req, res) => {
     return res.status(200).json({ message: "Login successful" });
   } catch (error) {
     console.error("Login error:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    if (error.status === 401 && error.code === "USER_NOT_VERIFIED") {
+      console.log("controller has found user to not be verified"); // hit here
+      return res.status(401).json({ message: error.code });
+    } else if (error.status === 400 && error.code === "USER_NOT_FOUND") {
+      return res.status(400).json({ message: error.code });
+    } else {
+      return res.status(500).json({ error: "Internal server error" });
+    }
   }
 };
 

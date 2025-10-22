@@ -290,6 +290,24 @@
   border: 2px solid var(--spotify-darkgray); /* space around thumb */
 }
 
+.footerMessage {
+  display: flex;
+  flex-direction: column;
+  height: 10vh;
+}
+
+.ynOptions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.ynBtn {
+  width: 10%;
+  font-size: 0.8rem;
+  border-radius: 10px;
+}
+
 .popupText div {
   margin-bottom: 0.8rem;
 }

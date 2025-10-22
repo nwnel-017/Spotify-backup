@@ -8,6 +8,7 @@ const {
   logout,
   signup,
   verifyUser,
+  resendVerification,
   linkSpotify,
   loginWithSpotify,
   refreshToken,

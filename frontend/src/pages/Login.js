@@ -5,12 +5,13 @@ import { useLocation } from "react-router-dom";
 import { LoadingContext } from "../context/LoadingContext";
 import styles from "./styles/Home.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCirclePlay } from "@fortawesome/free-solid-svg-icons";
+import { faCirclePlay, faL } from "@fortawesome/free-solid-svg-icons";
 import { faCirclePlus } from "@fortawesome/free-solid-svg-icons";
 import { faSpotify } from "@fortawesome/free-brands-svg-icons";
 import { startSpotifyAuth, loginUser } from "../services/SpotifyService";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
+import ConfirmButton from "../components/ConfirmButton";
 
 const LoginPage = () => {
   const { search } = useLocation();
@@ -35,17 +36,21 @@ const LoginPage = () => {
       startLoading("overlay");
       const res = await loginUser(email, password);
       console.log("Login successful");
-      if (res.status !== 200) {
-        setMessage("Login failed: " + res.statusText);
-        console.log("Login failed with status", res.status);
-        return;
-      }
       await getUser();
       stopLoading("overlay");
       navigate("/home");
     } catch (error) {
       console.error("Login error:", error);
-      toast.error("Incorrect email and password combination!");
+
+      if (error.status === 400 && error.code === "USER_NOT_FOUND") {
+        toast.error("Incorrect email or password!");
+      } else if (error.status === 401 && error.code === "USER_NOT_VERIFIED") {
+        toast.error(
+          "Account is not verified! Please check you email for a verification link to finish setting up your account."
+        );
+      } else {
+        toast.error("Invalid login!");
+      }
     } finally {
       stopLoading("overlay");
     }

@@ -7,7 +7,7 @@ const nodemailer = require("../utils/email/nodemailer");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const crypto = require("../utils/crypto");
-// const backupService = require("./backupService"); // we created a circular dependancy
+const { canSendVerification } = require("../utils/ratelimiting/rateLimiter");
 const { validateInput } = require("../utils/authValidation/validator");
 const { json } = require("express");
 const { parse } = require("dotenv");
@@ -37,7 +37,7 @@ function authValidation(email, password) {
   };
 }
 
-async function signupUser(req, res, email, password) {
+async function signupUser(email, password) {
   if (!email || !password) {
     throw new Error("missing email and / or password!");
   }
@@ -78,25 +78,18 @@ async function signupUser(req, res, email, password) {
   } catch (error) {
     throw new Error("Error sending verification email!");
   }
+}
 
-  // const userId = data.id;
+async function reverifyUser(email) {
+  if (!email) {
+    console.log("Missing email parameter!");
+    throw new Error("Missing email!");
+  }
 
-  // generate new jwt
-  //store in cookies
-  // try {
-  //   const newTokens = generateTokens(userId); // success
-
-  //   setAuthCookies(res, newTokens);
-  // } catch (error) {
-  //   console.log("Error issuing new tokens: " + error);
-  //   throw new Error(error.message);
-  // }
-
-  // To Do:
-  // 1.) user should be stored with verified = false
-  // 2.) use node mailer to generate a one time email verification jwt
-  // 3.) send email with url to /verify endpoint with token in url
-  // 4.) return a success to the user - toast message tells them to check email
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("email", email);
 }
 
 // To Do: generate a new session and return
@@ -132,23 +125,53 @@ async function verifyUser(token) {
   }
 }
 
+// To Do: check if they are verified - if not - resend email verification and return USER_NOT_VERIFIED
 async function loginUser(email, password) {
   if (!email || !password) {
     throw new Error("missing email and / or password!");
   }
 
-  try {
-    // retrieve user by email and compare hashes
-    const { data: user, error } = await supabase
-      .from("users")
-      .select("id, email, password")
-      .eq("email", email)
-      .single();
+  // retrieve user by email and compare hashes
+  const { data: user, error } = await supabase
+    .from("users")
+    .select("id, email, password, verified")
+    .eq("email", email)
+    .single();
 
-    if (!user || error) {
-      throw new Error("Error logging in!: " + error.message);
+  if (!user || error) {
+    const error = new Error("User not found!");
+    error.status = 400;
+    error.code = "USER_NOT_FOUND";
+    throw error;
+  }
+
+  if (!user.verified) {
+    console.log("User exists but is not verified!");
+    const error = new Error("User has not been verified!");
+    error.code = "USER_NOT_VERIFIED";
+    error.status = 401;
+    try {
+      // rate limiting to prevent attacks
+      if (!canSendVerification(email)) {
+        console.log("rate limit hit!");
+        throw error;
+      }
+      // resend email verification
+      const emailToken = generateEmailVerificationToken(email);
+      await nodemailer.sendVerificationEmail(email, emailToken);
+    } catch (err) {
+      if (err.status === 401 && err.code === "USER_NOT_VERIFIED") {
+        throw error;
+      } else {
+        console.log("Error: " + err);
+        throw new Error("Error sending verification email!");
+      }
     }
 
+    throw error;
+  }
+
+  try {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       console.log("Could not find user in database!");
@@ -936,4 +959,5 @@ module.exports = {
   clearAuthCookies,
   validateToken,
   refreshSpotifyToken,
+  reverifyUser,
 };
