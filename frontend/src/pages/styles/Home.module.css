@@ -1,9 +1,16 @@
+html,
+body {
+  height: 100%; /* make sure the root fills the viewport */
+  margin: 0; /* remove default body margin */
+}
+
 .dashboard {
   /* background-color: var(--spotify-black); */
   /* color: var(--spotify-lightgray); */
-  min-height: 100vh;
+  min-height: 100dvh;
   padding: 2rem;
   font-family: var(--font-main);
+  /* border: 2px solid blue; */
 }
 
 .alignCenter {
@@ -19,6 +26,11 @@
   flex-direction: column;
   justify-content: center;
   gap: 1rem;
+  height: 100dvh;
+  /* border: 2px solid yellow; */
+}
+
+.linkPage {
 }
 
 .loginForm {
@@ -180,6 +192,12 @@
 }
 
 .playlistTitle {
+  white-space: nowrap;
+  overflow: hidden; /* hide overflow */
+  text-overflow: ellipsis;
+  max-width: 200px;
+
+  /* min-width: 0; */
   font-weight: 400;
   font-size: 0.75rem;
 }
@@ -588,6 +606,10 @@
   .login {
     max-width: 30%;
   }
+
+  .playlistTitle {
+    max-width: 500px;
+  }
 }
 
 @media (min-width: 1024px) {
@@ -659,6 +681,7 @@
 
   .playlistTitle {
     font-size: 0.8rem;
+    max-width: 1000px;
   }
 
   .trackCount {

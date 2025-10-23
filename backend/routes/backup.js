@@ -15,7 +15,7 @@ const spotifyAuthMiddleware = require("../middleware/spotifyAuthMiddleware");
 const restoreCsvMiddleware = require("../middleware/restoreCsvMiddleware");
 const { rest, auth } = require("../utils/supabase/supabaseClient");
 
-router.get("/backups", authMiddleware, spotifyAuthMiddleware, getMyBackups);
+router.get("/backups", authMiddleware, getMyBackups);
 
 // POST /api/backup/weekly
 router.post(
@@ -34,6 +34,7 @@ router.post(
 );
 
 // restoring with OAuth (can restore to any account)
+// no spotifyAuthMiddleware - user can restore if they lost access to old account
 router.post("/restore/:id", authMiddleware, restorePlaylist);
 
 // POST /api/backup/upload
@@ -46,11 +47,6 @@ router.post(
   fileRestore
 );
 
-router.delete(
-  "/delete/:playlistId",
-  authMiddleware,
-  spotifyAuthMiddleware,
-  deleteBackup
-);
+router.delete("/delete/:playlistId", authMiddleware, deleteBackup);
 
 module.exports = router;

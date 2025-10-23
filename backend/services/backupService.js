@@ -185,8 +185,10 @@ async function removeBackup(playlistId) {
   }
 }
 
-async function retrieveBackups({ accessToken, supabaseUser }) {
-  if (!accessToken || !supabaseUser) {
+// were not doing anything with the access token besides checking it exists -> we can remove
+// we want the user to be able to manage their backups even if they are not liked to a spotify account (they might have lost access)
+async function retrieveBackups(supabaseUser) {
+  if (!supabaseUser) {
     throw new Error("Missing authorization to retrieve backups!");
   }
   const { data, error } = await supabase

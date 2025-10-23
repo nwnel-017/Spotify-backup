@@ -23,6 +23,7 @@ const Home = () => {
   const playlistRestored = params.get("playlistRestored");
   const fileRestored = params.get("fileRestored");
   const firstTimeUser = params.get("firstTimeUser");
+  const [currentView, setCurrentView] = useState("playlists");
 
   const toastShown = useRef({ firstTimeUser: false, playlistRestored: false });
 
@@ -128,9 +129,35 @@ const Home = () => {
     }
   }, [playlistRestored, fileRestored, firstTimeUser]);
 
-  if (accountNotLinked) {
-    return <AccountNotLinked linkAccount={() => linkAccount()} />;
-  }
+  const renderContent = () => {
+    if (currentView === "help")
+      return <Help onClose={() => setCurrentView("playlists")} />;
+
+    if (currentView === "backups") return <Backups />;
+
+    if (accountNotLinked)
+      return <AccountNotLinked linkAccount={() => linkAccount()} />;
+
+    return (
+      <>
+        <div>
+          <header className={styles.header}>
+            <img
+              src={
+                (profile?.images.length > 0 && profile.images[0].url) ||
+                "default-avatar.png"
+              }
+              alt="Profile"
+              className={styles.profileImage}
+            ></img>
+            <h1 className={styles.headerText}>{profile?.display_name}</h1>
+          </header>
+          <Playlists profileLoaded={!!profile} stopParentLoader={stopLoading} />
+        </div>
+      </>
+    );
+  };
+
   return (
     <div className={styles.dashboard}>
       <link
@@ -146,51 +173,22 @@ const Home = () => {
       </header>
       <Sidebar
         isOpen={sidebarOpen}
-        goHome={() => closeWindows()}
+        goHome={() => {
+          setCurrentView("playlists");
+          setSidebarOpen(!sidebarOpen);
+        }}
         onClose={() => toggleSidebar()}
         viewBackups={() => {
-          setViewBackups(!viewBackups);
+          setCurrentView("backups");
           setSidebarOpen(!sidebarOpen);
         }}
         viewHelp={() => {
-          setViewHelpPage(!viewHelpPage);
+          setCurrentView("help");
           setSidebarOpen(!sidebarOpen);
         }}
         logout={() => handleLogout()}
       />
-      <div className={styles.componentContainer}>
-        <div>
-          <header className={styles.header}>
-            <img
-              src={
-                (profile?.images.length > 0 && profile.images[0].url) ||
-                "default-avatar.png"
-              }
-              alt="Profile"
-              className={styles.profileImage}
-            ></img>
-            <h1 className={styles.headerText}>{profile?.display_name}</h1>
-          </header>
-          <div>
-            {viewBackups ? (
-              <Backups />
-            ) : (
-              <Playlists
-                profileLoaded={!!profile}
-                stopParentLoader={stopLoading}
-              />
-            )}
-          </div>
-          {viewHelpPage ? (
-            <Help
-              show={viewHelpPage}
-              onClose={() => setViewHelpPage(!viewHelpPage)}
-            />
-          ) : (
-            ""
-          )}
-        </div>
-      </div>
+      <div className={styles.componentContainer}>{renderContent()}</div>
     </div>
   );
 };

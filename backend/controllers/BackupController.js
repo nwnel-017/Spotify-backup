@@ -11,19 +11,14 @@ const {
 } = require("../jobs/weeklyBackup.js");
 
 async function getMyBackups(req, res) {
-  console.log("get my backups endpoint has been reached!");
+  const { supabaseUser } = req; // remove spotify access token
 
-  const { supabaseUser, spotifyAccessToken } = req;
-
-  if (!supabaseUser || !spotifyAccessToken) {
+  if (!supabaseUser) {
     throw new Error("Missing tokens from middleware!");
   }
 
   try {
-    const backups = await retrieveBackups({
-      accessToken: spotifyAccessToken,
-      supabaseUser: supabaseUser,
-    });
+    const backups = await retrieveBackups(supabaseUser);
 
     res.status(200).json(backups);
   } catch (error) {
@@ -95,10 +90,6 @@ async function oneTimeBackup(req, res) {
 }
 
 async function deleteBackup(req, res) {
-  console.log(
-    "Delete backup endpoint hit. attempting to delete playlist: " +
-      req.params.playlistId
-  );
   try {
     cancelWeeklyBackup(req.params.playlistId);
 
@@ -111,6 +102,7 @@ async function deleteBackup(req, res) {
   }
 }
 
+// this should be able to restore - even if we don't have access to a spotify account
 async function restorePlaylist(req, res) {
   const accessToken = req.spotifyAccessToken;
   const userId = req.spotifyId;

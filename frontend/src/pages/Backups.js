@@ -104,7 +104,6 @@ const Backups = () => {
   };
 
   useEffect(() => {
-    console.log("entered the suspected useeffect");
     if (!startLoading || !stopLoading) return;
 
     let stop = false;
