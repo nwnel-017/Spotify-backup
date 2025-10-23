@@ -11,7 +11,6 @@ import { faSpotify } from "@fortawesome/free-brands-svg-icons";
 import { startSpotifyAuth, loginUser } from "../services/SpotifyService";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
-import ConfirmButton from "../components/ConfirmButton";
 
 const LoginPage = () => {
   const { search } = useLocation();

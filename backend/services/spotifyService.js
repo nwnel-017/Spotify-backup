@@ -62,7 +62,7 @@ async function signupUser(email, password) {
     .select("id")
     .single();
 
-  if (!data || error) {
+  if (error || !data) {
     if (error.message?.includes("duplicate key")) {
       const duplicateError = new Error("DUPLICATE_USERS");
       duplicateError.code = "DUPLICATE_USERS"; // custom code for the frontend
@@ -138,7 +138,7 @@ async function loginUser(email, password) {
     .eq("email", email)
     .single();
 
-  if (!user || error) {
+  if (error || !user) {
     const error = new Error("User not found!");
     error.status = 400;
     error.code = "USER_NOT_FOUND";
@@ -318,12 +318,10 @@ async function exchangeCodeForToken(code) {
       const profileRes = await fetch("https://api.spotify.com/v1/me", {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-      const rawResponse = await profileRes.text();
-      console.log("Raw response body from profileRes:", rawResponse);
       spotifyProfile = await profileRes.json();
     } catch (error) {
-      console.error("Error fetching Spotify profile:", error);
-      return res.status(500).send("Failed to fetch Spotify profile");
+      console.error("Error fetching Spotify profile:", error); // error -> body is unusable
+      throw new Error("Failed to fetch Spotify profile");
     }
 
     const spotifyId = spotifyProfile.id;

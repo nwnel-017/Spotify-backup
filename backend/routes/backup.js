@@ -33,7 +33,7 @@ router.post(
   oneTimeBackup
 );
 
-// testing new POST method - restoring with OAuth (can restore to any account)
+// restoring with OAuth (can restore to any account)
 router.post("/restore/:id", authMiddleware, restorePlaylist);
 
 // POST /api/backup/upload

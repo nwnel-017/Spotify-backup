@@ -2,7 +2,6 @@ const crypto = require("crypto");
 const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
-// const createCsvWriter = require("csv-writer").createObjectCsvWriter;
 const spotifyService = require("./spotifyService"); // created a circular dependancy
 const supabase = require("../utils/supabase/supabaseClient");
 const { tracksToCsv } = require("../utils/file/csvUtils");
@@ -39,7 +38,9 @@ async function fetchPlaylistTracks(accessToken, playlistId) {
   return tracks;
 }
 
-//need to rewrite
+// checks if access token is provided
+// if not - called by weekly cron and we trigger an immediate token refresh
+// do not store in spotify_users
 async function handleWeeklyBackup({
   supabaseUser,
   spotifyAccessToken,
@@ -47,14 +48,46 @@ async function handleWeeklyBackup({
   playlistName,
 }) {
   try {
-    const currentTracks = await fetchPlaylistTracks(
-      spotifyAccessToken,
-      playlistId
-    );
+    let validToken = spotifyAccessToken; // only passed in when user initially schedules a weekly backup
+
+    if (!validToken) {
+      console.log(
+        "not called with an access token. initiating automatica refresh"
+      );
+      const { data: tokenData, error: tokenError } = await supabase
+        .from("spotify_users")
+        .select("refresh_token")
+        .eq("user_id", supabaseUser)
+        .single();
+
+      if (!tokenData || tokenError || !tokenData.refresh_token) {
+        console.log("Error retrieving refresh token");
+        throw new Error("Failed to fetch refresh token!");
+      }
+
+      const clientId = process.env.SPOTIFY_CLIENT_ID || "";
+      const clientSecret = process.env.SPOTIFY_CLIENT_SECRET || "";
+
+      const { access_token: refreshedToken } =
+        await spotifyService.refreshSpotifyToken(
+          tokenData.refresh_token,
+          clientId,
+          clientSecret
+        );
+
+      if (!refreshedToken) {
+        throw new Error("Unable to refresh token!");
+      }
+      validToken = refreshedToken;
+    } else {
+      console.log("valid access token provided");
+    }
+
+    const currentTracks = await fetchPlaylistTracks(validToken, playlistId);
     const currentHash = generateHash(currentTracks);
 
     // Get last backup from Supabase
-    // To Do: first get all backups for the user to check if they've exceeded the max limir
+    // first get all backups for the user to check if they've exceeded the max limit
     // If so - show them the error. If not - retrieve the last backup from the returned rows
     const {
       data: backups,
@@ -80,7 +113,7 @@ async function handleWeeklyBackup({
       throw limitError;
     }
 
-    const lastBackup = backups.map((b) => b.playlist_id === playlistId);
+    const lastBackup = backups.find((b) => b.playlist_id === playlistId);
 
     // If hash matches last backup, skip insert
     if (lastBackup && lastBackup.hash === currentHash) {
@@ -90,7 +123,7 @@ async function handleWeeklyBackup({
       );
       return;
     }
-    console.log("inserting new backup into suapabase");
+    console.log("inserting new backup into supabase");
     //Insert new backup
     const { data, error: insertError } = await supabase
       .from("weekly_backups")
