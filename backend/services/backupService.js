@@ -5,7 +5,7 @@ const path = require("path");
 const spotifyService = require("./spotifyService"); // created a circular dependancy
 const supabase = require("../utils/supabase/supabaseClient");
 const { tracksToCsv } = require("../utils/file/csvUtils");
-const { generateHash } = require("../utils/crypto");
+const { generateHash, decrypt } = require("../utils/crypto");
 
 const BACKUP_DIR = path.join(__dirname, "..", "backups");
 
@@ -18,21 +18,29 @@ async function fetchPlaylistTracks(accessToken, playlistId) {
   const tracks = [];
   let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
 
-  while (url) {
-    const res = await axios.get(url, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    const data = res.data;
-    tracks.push(
-      ...data.items.map((item) => ({
-        id: item.track.id,
-        name: item.track.name,
-        artist: item.track.artists.map((a) => a.name).join(", "),
-        album: item.track.album.name,
-        added_at: item.added_at,
-      }))
+  try {
+    while (url) {
+      const res = await axios.get(url, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const data = res.data;
+      tracks.push(
+        ...data.items.map((item) => ({
+          id: item.track.id,
+          name: item.track.name,
+          artist: item.track.artists.map((a) => a.name).join(", "),
+          album: item.track.album.name,
+          added_at: item.added_at,
+        }))
+      );
+      url = data.next;
+    }
+  } catch (fetchError) {
+    console.log(
+      "Encountered error fetching playlist tracks from Spotify during scheduled backup: " +
+        fetchError
     );
-    url = data.next;
+    throw new Error(fetchError);
   }
 
   return tracks;
@@ -47,6 +55,7 @@ async function handleWeeklyBackup({
   playlistId,
   playlistName,
 }) {
+  console.log("hit handleWeeklyBackup for playlist " + playlistName);
   try {
     let validToken = spotifyAccessToken; // only passed in when user initially schedules a weekly backup
 
@@ -60,24 +69,42 @@ async function handleWeeklyBackup({
         .eq("user_id", supabaseUser)
         .single();
 
-      if (!tokenData || tokenError || !tokenData.refresh_token) {
+      if (tokenError || !tokenData || !tokenData.refresh_token) {
         console.log("Error retrieving refresh token");
         throw new Error("Failed to fetch refresh token!");
+      }
+
+      console.log(
+        "refresh token fetched from supabase: " + tokenData.refresh_token
+      );
+
+      // To Do: decrypt token first
+      let decrypted;
+      try {
+        decrypted = decrypt(tokenData.refresh_token);
+      } catch (cryptoError) {
+        console.log(
+          "Error decrypting refresh token during weekly backup: " + cryptoError
+        );
+        throw new Error("Error decrypting refresh token during weekly backup!");
       }
 
       const clientId = process.env.SPOTIFY_CLIENT_ID || "";
       const clientSecret = process.env.SPOTIFY_CLIENT_SECRET || "";
 
-      const { access_token: refreshedToken } =
-        await spotifyService.refreshSpotifyToken(
-          tokenData.refresh_token,
-          clientId,
-          clientSecret
-        );
+      // this is failing
+      const tokenResponse = await spotifyService.refreshSpotifyToken(
+        decrypted,
+        clientId,
+        clientSecret
+      );
+
+      const refreshedToken = tokenResponse?.data?.access_token;
 
       if (!refreshedToken) {
         throw new Error("Unable to refresh token!");
       }
+      console.log("refreshed token: " + refreshedToken);
       validToken = refreshedToken;
     } else {
       console.log("valid access token provided");
@@ -150,6 +177,51 @@ async function handleWeeklyBackup({
   console.log("Weekly backup saved");
 }
 
+// test function to see why token refresh isnt working
+// async function refreshTokenTest() {
+//   const { data, error } = await supabase.from("users").select("id").single();
+
+//   if (error || !data) {
+//     throw new Error("didnt get user");
+//   }
+
+//   const supabaseUser = data.id;
+
+//   console.log("1.) retrieved supabase id: " + supabaseUser); //success
+
+//   const { data: tokenData, error: tokenError } = await supabase
+//     .from("spotify_users")
+//     .select("refresh_token")
+//     .eq("user_id", supabaseUser)
+//     .single();
+
+//   if (tokenError || !tokenData || !tokenData.refresh_token) {
+//     console.log("Error retrieving refresh token");
+//     throw new Error("Failed to fetch refresh token!");
+//   }
+
+//   console.log(
+//     "2.) refresh token fetched from supabase: " + tokenData.refresh_token //success
+//   );
+
+//   const clientId = process.env.SPOTIFY_CLIENT_ID || "";
+//   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET || "";
+
+//   // this is failing
+//   const tokenResponse = await spotifyService.refreshSpotifyToken(
+//     tokenData.refresh_token,
+//     clientId,
+//     clientSecret
+//   );
+
+//   const refreshedToken = tokenResponse?.data?.access_token;
+
+//   if (!refreshedToken) {
+//     throw new Error("Unable to refresh token!");
+//   }
+//   console.log("refreshed token: " + refreshedToken);
+// }
+
 async function handleOneTimeBackup({ accessToken, supabaseUser, playlistId }) {
   if (!accessToken || !playlistId || !supabaseUser) {
     throw new Error("Missing authentication or playlistId in service");
@@ -209,4 +281,5 @@ module.exports = {
   handleOneTimeBackup,
   retrieveBackups,
   removeBackup,
+  // refreshTokenTest, //remove later
 };

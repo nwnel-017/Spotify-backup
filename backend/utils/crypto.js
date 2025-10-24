@@ -10,15 +10,24 @@ const IV_LENGTH = 16;
  * @returns {string} - encrypted string formatted as iv:tag:ciphertext
  */
 function encrypt(text) {
-  const iv = crypto.randomBytes(IV_LENGTH);
-  const cipher = crypto.createCipheriv(ALGORITHM, KEY, iv);
+  if (!text) {
+    console.log("missing text to encrypt in crypto!");
+    throw new Error("missing text to encrypt!");
+  }
+  try {
+    const iv = crypto.randomBytes(IV_LENGTH);
+    const cipher = crypto.createCipheriv(ALGORITHM, KEY, iv);
 
-  let encrypted = cipher.update(text, "utf8", "hex");
-  encrypted += cipher.final("hex");
+    let encrypted = cipher.update(text, "utf8", "hex");
+    encrypted += cipher.final("hex");
 
-  const authTag = cipher.getAuthTag().toString("hex");
+    const authTag = cipher.getAuthTag().toString("hex");
 
-  return `${iv.toString("hex")}:${authTag}:${encrypted}`;
+    return `${iv.toString("hex")}:${authTag}:${encrypted}`;
+  } catch (error) {
+    console.log("Failed to encrypt: " + error);
+    throw new Error("Failed to encrypt: " + error);
+  }
 }
 
 /**
@@ -27,18 +36,28 @@ function encrypt(text) {
  * @returns {string} - decrypted plaintext
  */
 function decrypt(encryptedText) {
-  const [ivHex, tagHex, encrypted] = encryptedText.split(":");
+  if (!encryptedText || typeof encryptedText !== "string") {
+    console.error("decrypt() called with invalid value:", encryptedText); // called empty!
+    throw new Error("Invalid input to decrypt(): expected non-empty string");
+  }
 
-  const iv = Buffer.from(ivHex, "hex");
-  const authTag = Buffer.from(tagHex, "hex");
+  try {
+    const [ivHex, tagHex, encrypted] = encryptedText.split(":");
 
-  const decipher = crypto.createDecipheriv(ALGORITHM, KEY, iv);
-  decipher.setAuthTag(authTag);
+    const iv = Buffer.from(ivHex, "hex");
+    const authTag = Buffer.from(tagHex, "hex");
 
-  let decrypted = decipher.update(encrypted, "hex", "utf8");
-  decrypted += decipher.final("utf8");
+    const decipher = crypto.createDecipheriv(ALGORITHM, KEY, iv);
+    decipher.setAuthTag(authTag);
 
-  return decrypted;
+    let decrypted = decipher.update(encrypted, "hex", "utf8");
+    decrypted += decipher.final("utf8");
+
+    return decrypted;
+  } catch (error) {
+    console.log("crypto error: " + error);
+    throw new Error("crypto error: " + error);
+  }
 }
 
 function generateHash(data) {

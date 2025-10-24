@@ -25,15 +25,18 @@ module.exports = async function spotifyAuthMiddleware(req, res, next) {
   }
   let { access_token, refresh_token, expires_at, spotify_user } = data; //tokens are encrypted here
 
-  let decryptedRefreshToken = crypto.decrypt(refresh_token); // used to refresh token if access token is expired
-  let decryptedAccessToken = crypto.decrypt(access_token); // used to pass along to next() if we don't refresh
+  let decryptedRefreshToken;
+  let decryptedAccessToken;
 
-  // Check if access token is expired
-  // Refresh the access token
-  // Store the new token in supabase
-  if (new Date() >= new Date(expires_at)) {
-    console.log("Access token expired, refreshing...");
-    try {
+  try {
+    decryptedRefreshToken = crypto.decrypt(refresh_token);
+    decryptedAccessToken = crypto.decrypt(access_token);
+
+    // Check if access token is expired
+    // Refresh the access token
+    // Store the new token in supabase
+    if (new Date() >= new Date(expires_at)) {
+      console.log("Access token expired, refreshing...");
       const newToken = await spotifyService.refreshSpotifyToken(
         decryptedRefreshToken,
         process.env.SPOTIFY_CLIENT_ID,
@@ -69,10 +72,10 @@ module.exports = async function spotifyAuthMiddleware(req, res, next) {
       } else {
         console.log("Spotify tokens updated successfully");
       }
-    } catch (error) {
-      console.log("Error refreshing access token:", error);
-      return res.status(500).json({ error: "Failed to refresh token" });
     }
+  } catch (error) {
+    console.log("Error verifying access token:", error);
+    return res.status(500).json({ error: "Failed to verify token" });
   }
 
   if (!access_token || !spotify_user) {

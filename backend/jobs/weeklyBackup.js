@@ -28,7 +28,7 @@ async function scheduleJobs() {
       console.log(
         `Scheduling weekly backup for playlist ${playlistName} - ${playlistId}`
       );
-      const task = cron.schedule("0 9 * * 1", async () => {
+      const task = cron.schedule("*/30 * * * * *", async () => {
         console.log(`Running weekly backup for playlist ${playlistId}...`);
         try {
           await handleWeeklyBackup({
@@ -74,7 +74,8 @@ async function scheduleBackup(config) {
   // Run every Monday at 9 AM
   // when called by a cron - is should not be called with an access token to trigger an automatic refresh
   // handleWeeklyBackup - should be called with {supabaseUser, playlistId, playlistName}
-  const task = cron.schedule("0 9 * * 1", async () => {
+  // cron schedule -> 0 9 * * 1 = every monday 9 am
+  const task = cron.schedule("*/10 * * * * *", async () => {
     console.log(`Running weekly backup for playlist ${playlistId}...`);
     try {
       await handleWeeklyBackup({ supabaseUser, playlistId, playlistName });

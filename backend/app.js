@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const { scheduleJobs } = require("./jobs/weeklyBackup");
+// const { refreshTokenTest } = require("./services/backupService");
 
 const app = express();
 
@@ -24,6 +25,18 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.set("trust proxy", 1); // maybe this is confusing cors
+
+// issue found -> we are not decrypting the refresh token before automatic refresh in handleWeeklyBackup()
+// to do first -> make sure crypto is working - uncaught error when refreshing spotify token
+// (async () => {
+//   try {
+//     await refreshTokenTest();
+//     console.log("new token retrieved!");
+//     throw new Error("Ending test...");
+//   } catch (error) {
+//     throw new Error(error);
+//   }
+// })();
 
 // immediately reschedule cron jobs when server restarts
 // to do: solve issue

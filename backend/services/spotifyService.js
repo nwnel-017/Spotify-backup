@@ -816,6 +816,7 @@ function refreshAccessToken(refreshToken) {
 }
 
 // refresh token for spotify api
+// takes in a decrypted refresh token
 async function refreshSpotifyToken(refreshToken, clientId, clientSecret) {
   console.log("Reached refreshSpotifyToken in service");
 
@@ -823,11 +824,11 @@ async function refreshSpotifyToken(refreshToken, clientId, clientSecret) {
     throw new Error("Missing parameters!");
   }
 
-  // const decryptedRefreshToken = crypto.decrypt(refreshToken);
-
   const authString = Buffer.from(`${clientId}:${clientSecret}`).toString(
     "base64"
   );
+
+  const tokenUrl = process.env.SPOTIFY_TOKEN_URL || "";
 
   try {
     const response = await axios.post(
@@ -848,7 +849,7 @@ async function refreshSpotifyToken(refreshToken, clientId, clientSecret) {
     return response; // Contains new access_token and possibly a new refresh_token
   } catch (error) {
     console.error(
-      "Error refreshing access token:",
+      "Error in spotify api call to refresh access token:",
       error.response?.data || error.message
     );
     throw error;
