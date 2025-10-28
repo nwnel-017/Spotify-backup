@@ -1,14 +1,11 @@
-import React, { useState, useContext, useEffect, useRef } from "react";
-import { SignupPage } from "./Signup";
+import { useState, useContext, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import { LoadingContext } from "../context/LoadingContext";
 import styles from "./styles/Home.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCirclePlay, faL } from "@fortawesome/free-solid-svg-icons";
 import { faCirclePlus } from "@fortawesome/free-solid-svg-icons";
-import { faSpotify } from "@fortawesome/free-brands-svg-icons";
-import { startSpotifyAuth, loginUser } from "../services/SpotifyService";
+import { loginUser } from "../services/AuthService";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
 

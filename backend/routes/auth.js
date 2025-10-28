@@ -2,18 +2,19 @@ const express = require("express");
 const authMiddleware = require("../middleware/authMiddleware");
 const router = express.Router();
 const {
-  getSession,
-  // getUser,
-  login,
-  logout,
-  signup,
-  verifyUser,
-  resendVerification,
   linkSpotify,
   loginWithSpotify,
-  refreshToken,
   handleCallback,
 } = require("../controllers/spotifyController");
+
+const {
+  signup,
+  login,
+  verifyUser,
+  logout,
+  getSession,
+  refreshToken,
+} = require("../controllers/AuthController");
 
 // First Time Sign up
 router.post("/signup", signup);
@@ -34,6 +35,7 @@ router.get("/me", getSession);
 router.get("/refreshToken", refreshToken);
 
 // Login through Spotify OAuth
+// not yet implemented
 router.get("/loginWithSpotify", loginWithSpotify);
 
 // Link spotify accout with OAuth

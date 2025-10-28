@@ -1,8 +1,8 @@
 import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { signup } from "../services/SpotifyService";
-import { supabase } from "../supabase/supabaseClient";
-import { signupUser } from "../services/SpotifyService";
+// import { signup } from "../services/SpotifyService";
+// import { supabase } from "../supabase/supabaseClient";
+import { signupUser } from "../services/AuthService";
 import styles from "./styles/Home.module.css";
 import { toast } from "react-toastify";
 import { LoadingContext } from "../context/LoadingContext";

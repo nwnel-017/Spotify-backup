@@ -43,7 +43,6 @@ router.post(
   authMiddleware,
   spotifyAuthMiddleware,
   restoreCsvMiddleware,
-  // restorePlaylist
   fileRestore
 );
 

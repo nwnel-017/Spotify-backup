@@ -10,8 +10,8 @@ import AccountNotLinked from "../components/AccountNotLinked";
 import {
   getSpotifyProfile,
   startSpotifyAuth,
-  logoutUser,
 } from "../services/SpotifyService";
+import { logoutUser } from "../services/AuthService";
 import { toast } from "react-toastify";
 import "../App.css";
 import styles from "./styles/Home.module.css";

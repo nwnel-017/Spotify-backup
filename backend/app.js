@@ -1,9 +1,7 @@
-// app.js
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const { scheduleJobs } = require("./jobs/weeklyBackup");
-// const { refreshTokenTest } = require("./services/backupService");
 
 const app = express();
 
@@ -24,24 +22,9 @@ app.options("*", cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 
-app.set("trust proxy", 1); // maybe this is confusing cors
+app.set("trust proxy", 1);
 
-// issue found -> we are not decrypting the refresh token before automatic refresh in handleWeeklyBackup()
-// to do first -> make sure crypto is working - uncaught error when refreshing spotify token
-// (async () => {
-//   try {
-//     await refreshTokenTest();
-//     console.log("new token retrieved!");
-//     throw new Error("Ending test...");
-//   } catch (error) {
-//     throw new Error(error);
-//   }
-// })();
-
-// immediately reschedule cron jobs when server restarts
-// to do: solve issue
-// right now - we schedule a cron job with the access token - but they expire after one hour - so every job will fail
-// we need to refresh the tokens if they are expired
+// function to run on server startup - schedules cron jobs for all playlist backups stored in 'weekly_backups'
 (async () => {
   try {
     await scheduleJobs();
@@ -52,11 +35,11 @@ app.set("trust proxy", 1); // maybe this is confusing cors
 })();
 
 //Routes
-const spotifyRoutes = require("./routes/spotify"); // Import the Spotify routes
-app.use("/api/spotify", spotifyRoutes); // Use the Spotify routes
+const spotifyRoutes = require("./routes/spotify");
+app.use("/api/spotify", spotifyRoutes);
 const authRoutes = require("./routes/auth");
 app.use("/api/auth", authRoutes);
-const backupRoutes = require("./routes/backup"); // Import the backup routes
-app.use("/api/backup", backupRoutes); // Routes for backup operations
+const backupRoutes = require("./routes/backup");
+app.use("/api/backup", backupRoutes);
 
 module.exports = app;

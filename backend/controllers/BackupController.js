@@ -28,12 +28,8 @@ async function getMyBackups(req, res) {
 }
 
 async function enableWeeklyBackup(req, res) {
-  console.log("Enable weekly backup endpoint hit"); //reached
-
   const { playlistId, playlistName } = req.body;
   const { supabaseUser, spotifyAccessToken } = req;
-
-  console.log("Request body:", req.body); // weve only got playlistId
 
   if (!playlistId || !supabaseUser || !spotifyAccessToken) {
     throw new Error("Missing required parameters in request body");
@@ -108,11 +104,6 @@ async function restorePlaylist(req, res) {
   const userId = req.spotifyId;
   const trackIds = req.trackIds;
   const playlistName = req.playlistName;
-
-  console.log("access token: " + accessToken); // undefined
-  console.log("spotify user id: " + userId); // undefined
-  console.log("playlist name: " + playlistName);
-  console.log("track ids: " + trackIds);
 
   if (!accessToken || !userId) {
     return res.status(401).json({ message: "Missing spotify authorization!" });

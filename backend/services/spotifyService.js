@@ -1,287 +1,11 @@
-// /services/spotifyAuth.js
 require("dotenv").config();
 const axios = require("axios");
 const supabase = require("../utils/supabase/supabaseClient");
 const nodemailer = require("../utils/email/nodemailer");
-// const { getSupabase } = require("../utils/supabase/supabaseClient");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const crypto = require("../utils/crypto");
-const { canSendVerification } = require("../utils/ratelimiting/rateLimiter");
-const { validateInput } = require("../utils/authValidation/validator");
-const { json } = require("express");
-const { parse } = require("dotenv");
 
-let accessToken = "";
-const tokenUrl = process.env.SPOTIFY_TOKEN_URL;
-const clientId = process.env.SPOTIFY_CLIENT_ID;
-const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
-const TOKEN_REFRESH_INTERVAL = 3500 * 1000; // ~58 minutes
-
-function authValidation(email, password) {
-  if (!email || !password) {
-    throw new Error("missing email and password!");
-  }
-
-  const { sanitizedEmail, sanitizedPassword } = validateInput(email, password);
-
-  console.log("after validation: " + sanitizedEmail + ", " + sanitizedPassword); // correct email
-
-  if (!sanitizedEmail || !sanitizedPassword) {
-    throw new Error("Invalid input!");
-  }
-
-  return {
-    sanitizedEmail: sanitizedEmail,
-    sanitizedPassword: sanitizedPassword,
-  };
-}
-
-async function signupUser(email, password) {
-  if (!email || !password) {
-    throw new Error("missing email and / or password!");
-  }
-
-  const { data: existingUser } = await supabase
-    .from("users")
-    .select("*")
-    .eq("email", email)
-    .single();
-
-  if (existingUser) {
-    throw new Error("User already exists in system!");
-  }
-
-  // hash password
-  const hashed = await bcrypt.hash(password, 12);
-
-  // insert user into database
-  const { data, error } = await supabase
-    .from("users")
-    .insert([{ email, password: hashed, verified: false }])
-    .select("id")
-    .single();
-
-  if (error || !data) {
-    if (error.message?.includes("duplicate key")) {
-      const duplicateError = new Error("DUPLICATE_USERS");
-      duplicateError.code = "DUPLICATE_USERS"; // custom code for the frontend
-      throw duplicateError;
-    }
-    throw new Error("Error inserting user into database!");
-  }
-
-  // send verificaton email
-  try {
-    const emailToken = generateEmailVerificationToken(email);
-    await nodemailer.sendVerificationEmail(email, emailToken);
-  } catch (error) {
-    throw new Error("Error sending verification email!");
-  }
-}
-
-async function reverifyUser(email) {
-  if (!email) {
-    console.log("Missing email parameter!");
-    throw new Error("Missing email!");
-  }
-
-  const { data, error } = await supabase
-    .from("users")
-    .select("*")
-    .eq("email", email);
-}
-
-// To Do: generate a new session and return
-async function verifyUser(token) {
-  if (!token) {
-    console.log("Missing token in user verification");
-    throw new Error("Missing authentication!");
-  }
-
-  try {
-    // verify the access token
-    const decoded = jwt.verify(token, process.env.EMAIL_VERIFICATION_SECRET);
-    const email = decoded.email;
-
-    const { data } = await supabase
-      .from("users")
-      .update({ verified: true })
-      .eq("email", email)
-      .select("*");
-
-    const id = data?.[0]?.id;
-
-    if (!id) {
-      console.log("failed to return userId from supabase!");
-      throw new Error("Missing returned Id");
-    }
-
-    const newSession = generateTokens(id);
-    return newSession;
-  } catch (error) {
-    console.log("Failed to authenticate user: " + error);
-    throw new Error("Failed to authentiate user!");
-  }
-}
-
-// To Do: check if they are verified - if not - resend email verification and return USER_NOT_VERIFIED
-async function loginUser(email, password) {
-  if (!email || !password) {
-    throw new Error("missing email and / or password!");
-  }
-
-  // retrieve user by email and compare hashes
-  const { data: user, error } = await supabase
-    .from("users")
-    .select("id, email, password, verified")
-    .eq("email", email)
-    .single();
-
-  if (error || !user) {
-    const error = new Error("User not found!");
-    error.status = 400;
-    error.code = "USER_NOT_FOUND";
-    throw error;
-  }
-
-  if (!user.verified) {
-    console.log("User exists but is not verified!");
-    const error = new Error("User has not been verified!");
-    error.code = "USER_NOT_VERIFIED";
-    error.status = 401;
-    try {
-      // rate limiting to prevent attacks
-      if (!canSendVerification(email)) {
-        console.log("rate limit hit!");
-        throw error;
-      }
-      // resend email verification
-      const emailToken = generateEmailVerificationToken(email);
-      await nodemailer.sendVerificationEmail(email, emailToken);
-    } catch (err) {
-      if (err.status === 401 && err.code === "USER_NOT_VERIFIED") {
-        throw error;
-      } else {
-        console.log("Error: " + err);
-        throw new Error("Error sending verification email!");
-      }
-    }
-
-    throw error;
-  }
-
-  try {
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      console.log("Could not find user in database!");
-      throw new Error("Error: user is not signed up!");
-    }
-
-    const newTokens = generateTokens(user.id);
-
-    if (!newTokens || !newTokens.access_token || !newTokens.refresh_token) {
-      throw new Error("unable to generate tokens!");
-    }
-
-    return newTokens;
-  } catch (error) {
-    console.log("Error signing in user: " + error);
-    throw new Error("Error logging in: " + error);
-  }
-}
-
-function validateToken(req) {
-  const token = req.cookies?.["sb-access-token"]; // this is undefined
-
-  console.log(
-    "found token in cookies when calling getSession from AuthContext: " + token
-  );
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decoded.id;
-    return userId;
-  } catch (err) {
-    console.error("JWT verification failed:", err.message);
-    throw new Error("Not authenticated!");
-  }
-}
-
-function generateTokens(id) {
-  if (!id) {
-    throw new Error("No ID provided!");
-  }
-
-  const access_token = jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: "15m",
-  });
-
-  const refresh_token = jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
-  });
-
-  if (!access_token || !refresh_token) {
-    console.log("Failed to generate token!");
-    throw new Error("Failed to generate token!");
-  }
-
-  return { access_token, refresh_token };
-}
-
-function generateEmailVerificationToken(email) {
-  if (!email) {
-    console.log("Error: cannot generate a token without an email!");
-  }
-
-  try {
-    const token = jwt.sign({ email }, process.env.EMAIL_VERIFICATION_SECRET, {
-      expiresIn: "1d",
-    });
-    return token;
-  } catch (tokenError) {
-    console.log("Error generating token: " + tokenError);
-    throw new Error("Failed to generate token!");
-  }
-}
-
-async function setAuthCookies(res, session) {
-  try {
-    res.cookie("sb-access-token", session.access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 15 * 60 * 1000, // expires in not defined!
-    });
-
-    res.cookie("sb-refresh-token", session.refresh_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 30 * 1000,
-    });
-  } catch (error) {
-    console.error("Error setting auth cookies:", error);
-    throw new Error("Failed to set authentication cookies");
-  }
-}
-
-function clearAuthCookies(res) {
-  res.clearCookie("sb-access-token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/",
-  });
-  res.clearCookie("sb-refresh-token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/",
-  });
-}
-
-// To Do: change to axios
 async function exchangeCodeForToken(code) {
   try {
     const tokenRes = await fetch(`${process.env.SPOTIFY_TOKEN_URL}`, {
@@ -320,7 +44,7 @@ async function exchangeCodeForToken(code) {
       });
       spotifyProfile = await profileRes.json();
     } catch (error) {
-      console.error("Error fetching Spotify profile:", error); // error -> body is unusable
+      console.error("Error fetching Spotify profile:", error);
       throw new Error("Failed to fetch Spotify profile");
     }
 
@@ -373,7 +97,6 @@ async function restorePlaylistFromStorage(nonce, spotifyId, tokens) {
   }
 
   try {
-    // verify nonce from file_restore_nonces -> retrieve userId and playlistName
     const { data } = await supabase
       .from("file_restore_nonces")
       .select("*")
@@ -386,7 +109,6 @@ async function restorePlaylistFromStorage(nonce, spotifyId, tokens) {
 
     const path = data.storage_path;
     const playlistName = data.playlist_name;
-    // const supabaseUser = data.user_id;
 
     // use nonce to retrieve playlist from storage
     const { data: file } = await supabase.storage
@@ -439,7 +161,7 @@ async function loginWithSpotify(spotifyId, tokens) {
       spotify_user: spotifyId,
       access_token: encryptedAccess,
       refresh_token: encryptedRefresh,
-      expires_at: expiresAt, /////////// need to verify -> can we read the expires at correctly?
+      expires_at: expiresAt,
     },
     { onConflict: ["user_id"] }
   );
@@ -574,8 +296,6 @@ async function createNewPlaylist(accessToken, userId, playlistName) {
 
   const name = `${playlistName} - Restored ${formattedDate}`;
 
-  // To Do : we still need to grab spotify ID from middleware params
-  // and userId from middleware
   try {
     const res = await axios.post(
       `${process.env.SPOTIFY_API_BASE_URL}/users/${userId}/playlists`,
@@ -786,35 +506,6 @@ async function getSpotifyId(accessToken) {
   return profile.id;
 }
 
-// refreshes token for supabase user
-function refreshAccessToken(refreshToken) {
-  console.log("hit refreshAccessToken in spotifyService.js!"); //// this is never hit
-  if (!refreshToken) {
-    throw new Error("Missing token!");
-  }
-
-  let decoded;
-  try {
-    decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
-  } catch (error) {
-    console.log("Refreshing token failed: " + error);
-    throw new Error("Failed to refresh token!");
-  }
-
-  const userId = decoded.id;
-  if (!userId) {
-    console.log("Couldnt retreive user id from verified token!");
-    return res.status(401).json({ error: "Invalid refresh token payload" });
-  }
-
-  const newTokens = generateTokens(userId);
-  if (newTokens) {
-    return newTokens;
-  } else {
-    throw new Error("Failed to retrieve new tokens!");
-  }
-}
-
 // refresh token for spotify api
 // takes in a decrypted refresh token
 async function refreshSpotifyToken(refreshToken, clientId, clientSecret) {
@@ -845,7 +536,6 @@ async function refreshSpotifyToken(refreshToken, clientId, clientSecret) {
       }
     );
 
-    // accessToken = response.data.access_token;
     return response; // Contains new access_token and possibly a new refresh_token
   } catch (error) {
     console.error(
@@ -943,20 +633,11 @@ async function getProfileInfo(accessToken) {
 }
 
 module.exports = {
-  authValidation,
-  signupUser,
-  verifyUser,
-  loginUser,
-  refreshAccessToken,
   exchangeCodeForToken,
   handleOAuth,
   buildOAuthUrl,
   getPlaylistTracks,
   getPlaylists,
   getProfileInfo,
-  setAuthCookies,
-  clearAuthCookies,
-  validateToken,
   refreshSpotifyToken,
-  reverifyUser,
 };

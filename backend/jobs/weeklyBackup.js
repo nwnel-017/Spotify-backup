@@ -28,7 +28,7 @@ async function scheduleJobs() {
       console.log(
         `Scheduling weekly backup for playlist ${playlistName} - ${playlistId}`
       );
-      const task = cron.schedule("*/30 * * * * *", async () => {
+      const task = cron.schedule("0 3 * * 0", async () => {
         console.log(`Running weekly backup for playlist ${playlistId}...`);
         try {
           await handleWeeklyBackup({
@@ -55,6 +55,7 @@ async function scheduleBackup(config) {
 
   // To Do: check supabase to make sure the limit of 5 playlists has not been exceeded
 
+  // active jobs need to contain a supabase user too -> user_id from weekly_backups
   if (activeJobs.has(playlistId)) {
     console.log(`Weekly backup already scheduled for playlist ${playlistId}`);
     const duplicateError = new Error("DUPLICATE_BACKUP");
@@ -75,7 +76,7 @@ async function scheduleBackup(config) {
   // when called by a cron - is should not be called with an access token to trigger an automatic refresh
   // handleWeeklyBackup - should be called with {supabaseUser, playlistId, playlistName}
   // cron schedule -> 0 9 * * 1 = every monday 9 am
-  const task = cron.schedule("*/10 * * * * *", async () => {
+  const task = cron.schedule("0 3 * * 0", async () => {
     console.log(`Running weekly backup for playlist ${playlistId}...`);
     try {
       await handleWeeklyBackup({ supabaseUser, playlistId, playlistName });
