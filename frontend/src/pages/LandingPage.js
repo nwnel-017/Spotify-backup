@@ -11,7 +11,7 @@ const LandingPage = () => {
         <div className={styles.innerContent}>
           <Logo />
           <div className={styles.landingContent}>
-            <div className={styles.titleText}>SpotSave</div>
+            <div className={styles.titleText}>TuneBacker</div>
             <div className={styles.subTitleText}>
               Keep your playlists safe for free - backup and restore anytime
             </div>
