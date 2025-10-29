@@ -17,7 +17,6 @@ const SignupPage = () => {
   const handleSignUp = async (e) => {
     e.preventDefault();
 
-    // To Do: fix -> this block doesnt work
     if (!email || !password) {
       toast.error("Please enter both email and password!");
       return;
@@ -45,7 +44,7 @@ const SignupPage = () => {
   };
 
   const login = () => {
-    window.location.href = `${process.env.REACT_APP_CLIENT_URL}/login`;
+    navigate("/login");
   };
   return (
     <div className={`${styles.dashboard} ${styles.loginPage}`}>
