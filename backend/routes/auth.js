@@ -44,4 +44,9 @@ router.get("/linkAccount", authMiddleware, linkSpotify);
 // 2. Handle callback and exchange code for access token
 router.get("/callback", handleCallback);
 
+// test route
+router.get("/testAuth", (req, res) => {
+  res.json({ message: "Auth route is working!" });
+});
+
 module.exports = router;
