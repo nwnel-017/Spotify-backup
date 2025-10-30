@@ -11,8 +11,6 @@ const corsOptions = {
 
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-  // allowedHeaders: "*",
-  // optionsSuccessStatus: 200, // <- handles preflight automatically
 };
 
 // Middlewares
@@ -22,7 +20,7 @@ app.options("*", cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 
-app.set("trust proxy", 1);
+app.set("trust proxy", true);
 
 // function to run on server startup - schedules cron jobs for all playlist backups stored in 'weekly_backups'
 (async () => {
