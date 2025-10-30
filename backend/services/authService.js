@@ -220,15 +220,21 @@ async function setAuthCookies(res, session) {
 
     res.cookie("sb-access-token", session.access_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      // secure: process.env.NODE_ENV === "production",
+      // sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: true,
+      sameSite: "none",
+      path: "/",
       maxAge: 15 * 60 * 1000, // expires in not defined!
     });
 
     res.cookie("sb-refresh-token", session.refresh_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      // secure: process.env.NODE_ENV === "production",
+      // sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: true,
+      sameSite: "none",
+      path: "/",
       maxAge: 60 * 60 * 24 * 30 * 1000,
     });
   } catch (error) {
