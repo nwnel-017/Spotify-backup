@@ -217,7 +217,7 @@ async function setAuthCookies(res, session) {
   try {
     res.cookie("sb-access-token", session.access_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: process.env.NODE_ENV === "production" ? "none" : "lax",
       sameSite: "lax",
       maxAge: 15 * 60 * 1000, // expires in not defined!
     });
