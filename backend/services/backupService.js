@@ -74,10 +74,6 @@ async function handleWeeklyBackup({
         throw new Error("Failed to fetch refresh token!");
       }
 
-      console.log(
-        "refresh token fetched from supabase: " + tokenData.refresh_token
-      );
-
       // To Do: decrypt token first
       let decrypted;
       try {
@@ -104,7 +100,6 @@ async function handleWeeklyBackup({
       if (!refreshedToken) {
         throw new Error("Unable to refresh token!");
       }
-      console.log("refreshed token: " + refreshedToken);
       validToken = refreshedToken;
     } else {
       console.log("valid access token provided");

@@ -430,7 +430,6 @@ async function buildOAuthUrl({
     throw new Error("Invalid flow!");
   }
 
-  console.log("state payload: " + statePayload);
   const queryParams = new URLSearchParams({
     response_type: "code",
     scope: scope,

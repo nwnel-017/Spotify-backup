@@ -43,8 +43,6 @@ exports.restorePlaylist = async (req, res) => {
     const supabaseUser = req.supabaseUser;
 
     if (!supabaseUser || !playlistId) {
-      console.log("supabase id: " + supabaseUser);
-      console.log("playlist id: " + playlistId);
       console.log("Missing supababase user id or playlist id!");
       return res.status(400).json({ message: "Missing parameters!" });
     }

@@ -14,8 +14,6 @@ function authValidation(email, password) {
 
   const { sanitizedEmail, sanitizedPassword } = validateInput(email, password);
 
-  console.log("after validation: " + sanitizedEmail + ", " + sanitizedPassword); // correct email
-
   if (!sanitizedEmail || !sanitizedPassword) {
     throw new Error("Invalid input!");
   }
@@ -62,13 +60,13 @@ async function signupUser(email, password) {
 
   console.log("Successfully signed up user!");
 
-  // send verificaton email
-  try {
-    const emailToken = generateEmailVerificationToken(email);
-    await nodemailer.sendVerificationEmail(email, emailToken);
-  } catch (error) {
-    throw new Error("Error sending verification email!");
-  }
+  // send verificaton email - currently turned off in production - cant send emails since I do not own the domain
+  // try {
+  //   const emailToken = generateEmailVerificationToken(email);
+  //   await nodemailer.sendVerificationEmail(email, emailToken);
+  // } catch (error) {
+  //   throw new Error("Error sending verification email!");
+  // }
 }
 
 async function loginUser(email, password) {
@@ -90,31 +88,32 @@ async function loginUser(email, password) {
     throw error;
   }
 
-  if (!user.verified) {
-    console.log("User exists but is not verified!");
-    const error = new Error("User has not been verified!");
-    error.code = "USER_NOT_VERIFIED";
-    error.status = 401;
-    try {
-      // rate limiting to prevent attacks
-      if (!canSendVerification(email)) {
-        console.log("rate limit hit!");
-        throw error;
-      }
-      // resend email verification
-      const emailToken = generateEmailVerificationToken(email);
-      await nodemailer.sendVerificationEmail(email, emailToken);
-    } catch (err) {
-      if (err.status === 401 && err.code === "USER_NOT_VERIFIED") {
-        throw error;
-      } else {
-        console.log("Error: " + err);
-        throw new Error("Error sending verification email!");
-      }
-    }
+  // email authentication is turned off in production
+  // if (!user.verified) {
+  //   console.log("User exists but is not verified!");
+  //   const error = new Error("User has not been verified!");
+  //   error.code = "USER_NOT_VERIFIED";
+  //   error.status = 401;
+  //   try {
+  //     // rate limiting to prevent attacks
+  //     if (!canSendVerification(email)) {
+  //       console.log("rate limit hit!");
+  //       throw error;
+  //     }
+  //     // resend email verification
+  //     const emailToken = generateEmailVerificationToken(email);
+  //     await nodemailer.sendVerificationEmail(email, emailToken);
+  //   } catch (err) {
+  //     if (err.status === 401 && err.code === "USER_NOT_VERIFIED") {
+  //       throw error;
+  //     } else {
+  //       console.log("Error: " + err);
+  //       throw new Error("Error sending verification email!");
+  //     }
+  //   }
 
-    throw error;
-  }
+  //   throw error;
+  // }
 
   try {
     const isMatch = await bcrypt.compare(password, user.password);
@@ -176,10 +175,6 @@ function generateTokens(id) {
 function validateToken(req) {
   const token = req.cookies?.["sb-access-token"]; // this is undefined
 
-  console.log(
-    "found token in cookies when calling getSession from AuthContext: " + token
-  );
-
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.id;
@@ -219,7 +214,6 @@ function refreshAccessToken(refreshToken) {
 }
 
 async function setAuthCookies(res, session) {
-  console.log("setting cookies with refreshtoken: " + session.refresh_token);
   try {
     res.cookie("sb-access-token", session.access_token, {
       httpOnly: true,

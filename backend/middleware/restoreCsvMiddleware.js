@@ -35,11 +35,6 @@ const restoreCsvMiddleware = (req, res, next) => {
     }
     req.playlistName = playlistName;
     try {
-      console.log("req.file info:", {
-        originalname: req.file.originalname,
-        mimetype: req.file.mimetype,
-        size: req.file.size,
-      });
       // Convert buffer to string so controller can parse it
       const csvContent = req.file.buffer.toString("utf-8");
 
@@ -48,7 +43,6 @@ const restoreCsvMiddleware = (req, res, next) => {
         .split(/\r?\n/)
         .map((r) => r.trim())
         .filter(Boolean);
-      console.log("rows:", rows);
 
       const trackIds = rows.filter((id) => /^[A-Za-z0-9]{22}$/.test(id)); // validating track ids
 
