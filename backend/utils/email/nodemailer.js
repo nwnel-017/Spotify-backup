@@ -15,7 +15,7 @@ const jwt = require("jsonwebtoken");
 //   logger: true,
 // });
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// const resend = new Resend(process.env.RESEND_API_KEY);
 
 async function sendVerificationEmail(email, token) {
   if (!email || !token) {
@@ -37,17 +37,17 @@ async function sendVerificationEmail(email, token) {
     //     <p>This link expires in 24 hours.</p>
     //   `,
     // });
-    await resend.emails.send({
-      from: `TuneBacker <${process.env.SMTP_USER}>`, // must be verified on Resend
-      to: email,
-      subject: "Please Verify Your Email",
-      html: `
-        <h2>Welcome to TuneBacker!</h2>
-        <p>Click below to verify your email:</p>
-        <a href="${url}">${url}</a>
-        <p>This link expires in 24 hours.</p>
-      `,
-    });
+    // await resend.emails.send({
+    //   from: `TuneBacker <${process.env.SMTP_USER}>`, // must be verified on Resend
+    //   to: email,
+    //   subject: "Please Verify Your Email",
+    //   html: `
+    //     <h2>Welcome to TuneBacker!</h2>
+    //     <p>Click below to verify your email:</p>
+    //     <a href="${url}">${url}</a>
+    //     <p>This link expires in 24 hours.</p>
+    //   `,
+    // });
   } catch (error) {
     console.log("Error sending verification email: " + error);
     throw new Error("Error sending verification email!");
