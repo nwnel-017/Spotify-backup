@@ -60,6 +60,8 @@ async function signupUser(email, password) {
     throw new Error("Error inserting user into database!");
   }
 
+  console.log("Successfully signed up user!");
+
   // send verificaton email
   try {
     const emailToken = generateEmailVerificationToken(email);
