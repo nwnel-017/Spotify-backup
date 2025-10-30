@@ -215,8 +215,8 @@ function refreshAccessToken(refreshToken) {
 
 async function setAuthCookies(res, session) {
   try {
-    res.header("Access-Control-Allow-Credentials", "true");
-    res.header("Access-Control-Allow-Origin", process.env.CLIENT_URL);
+    // res.header("Access-Control-Allow-Credentials", "true");
+    // res.header("Access-Control-Allow-Origin", process.env.CLIENT_URL);
 
     res.cookie("sb-access-token", session.access_token, {
       httpOnly: true,
