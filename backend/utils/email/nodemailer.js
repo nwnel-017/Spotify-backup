@@ -16,9 +16,10 @@ async function sendVerificationEmail(email, token) {
   }
 
   const url = `${process.env.API_BASE_URL}/auth/verify?token=${token}`;
+  console.log("Sending verification email...");
   try {
     await transporter.sendMail({
-      from: `"SpotSave" <${process.env.SMTP_USER}>`,
+      from: `"TuneBacker" <${process.env.SMTP_USER}>`,
       to: email,
       subject: "Please Verify your email",
       html: `

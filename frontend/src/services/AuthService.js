@@ -1,6 +1,10 @@
 import axios from "axios";
 
-// tested
+// issue here
+// in production - when the email failes and we receive a 500 error from the backend - not caught properly
+// app stuck loading
+// to do - try to reacreate and fix
+// changed .env variable to throw 500 error - worked correctly
 export const loginUser = async (email, password) => {
   if (!email || !password) {
     throw new Error("Email and password are required");
