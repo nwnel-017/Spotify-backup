@@ -1,5 +1,4 @@
 const nodemailer = require("nodemailer");
-const { Resend } = require("resend");
 const jwt = require("jsonwebtoken");
 
 // const transporter = nodemailer.createTransport({

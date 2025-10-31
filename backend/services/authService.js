@@ -1,7 +1,8 @@
 const { validateInput } = require("../utils/authValidation/validator");
 const bcrypt = require("bcrypt");
 const { canSendVerification } = require("../utils/ratelimiting/rateLimiter");
-const nodemailer = require("../utils/email/nodemailer");
+// const nodemailer = require("../utils/email/nodemailer");
+const { resendEmail } = require("../utils/email/resend");
 const supabase = require("../utils/supabase/supabaseClient");
 const jwt = require("jsonwebtoken");
 
@@ -61,12 +62,12 @@ async function signupUser(email, password) {
   console.log("Successfully signed up user!");
 
   // send verificaton email - currently turned off in production - cant send emails since I do not own the domain
-  // try {
-  //   const emailToken = generateEmailVerificationToken(email);
-  //   await nodemailer.sendVerificationEmail(email, emailToken);
-  // } catch (error) {
-  //   throw new Error("Error sending verification email!");
-  // }
+  try {
+    const emailToken = generateEmailVerificationToken(email);
+    await resendEmail(email, emailToken);
+  } catch (error) {
+    throw new Error("Error sending verification email!");
+  }
 }
 
 async function loginUser(email, password) {
@@ -89,31 +90,31 @@ async function loginUser(email, password) {
   }
 
   // email authentication is turned off in production
-  // if (!user.verified) {
-  //   console.log("User exists but is not verified!");
-  //   const error = new Error("User has not been verified!");
-  //   error.code = "USER_NOT_VERIFIED";
-  //   error.status = 401;
-  //   try {
-  //     // rate limiting to prevent attacks
-  //     if (!canSendVerification(email)) {
-  //       console.log("rate limit hit!");
-  //       throw error;
-  //     }
-  //     // resend email verification
-  //     const emailToken = generateEmailVerificationToken(email);
-  //     await nodemailer.sendVerificationEmail(email, emailToken);
-  //   } catch (err) {
-  //     if (err.status === 401 && err.code === "USER_NOT_VERIFIED") {
-  //       throw error;
-  //     } else {
-  //       console.log("Error: " + err);
-  //       throw new Error("Error sending verification email!");
-  //     }
-  //   }
+  if (!user.verified) {
+    console.log("User exists but is not verified!");
+    const error = new Error("User has not been verified!");
+    error.code = "USER_NOT_VERIFIED";
+    error.status = 401;
+    try {
+      // rate limiting to prevent attacks
+      if (!canSendVerification(email)) {
+        console.log("rate limit hit!");
+        throw error;
+      }
+      // resend email verification
+      const emailToken = generateEmailVerificationToken(email);
+      await resendEmail(email, emailToken);
+    } catch (err) {
+      if (err.status === 401 && err.code === "USER_NOT_VERIFIED") {
+        throw error;
+      } else {
+        console.log("Error: " + err);
+        throw new Error("Error sending verification email!");
+      }
+    }
 
-  //   throw error;
-  // }
+    throw error;
+  }
 
   try {
     const isMatch = await bcrypt.compare(password, user.password);

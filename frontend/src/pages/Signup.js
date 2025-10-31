@@ -31,12 +31,12 @@ const SignupPage = () => {
     try {
       startLoading("overlay");
       const res = await signupUser(email, password);
-      // toast.success(
-      //   "Verification email has been sent! Please follow the link to verify your account"
-      // );
+      toast.success(
+        "Verification email has been sent! Please follow the link to verify your account"
+      );
       //email verification currently disabled - cant send emails since I do not own the domain
-      toast.success("Account successfully created! Please log in to continue.");
-      navigate("/login");
+      // toast.success("Account successfully created! Please log in to continue.");
+      // navigate("/login");
     } catch (error) {
       console.log("Error signing up!");
       toast.error("There was an error signing up");
