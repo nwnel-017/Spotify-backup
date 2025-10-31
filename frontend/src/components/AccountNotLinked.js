@@ -6,8 +6,7 @@ const AccountNotLinked = ({ linkAccount }) => {
       <div className={styles.loginPage}>
         <h2>Please continue by linking your spotify account</h2>
         <div>
-          No confidential information from your Spotify account will be saved in
-          SpotSave
+          No confidential information from your Spotify account will be saved
         </div>
         {/* <div>
           If you currently have playlists saved and lost access to your account,

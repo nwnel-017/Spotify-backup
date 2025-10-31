@@ -107,7 +107,7 @@ const Home = () => {
   useEffect(() => {
     if (firstTimeUser === "true" && !toastShown.current.firstTimeUser) {
       toast.success(
-        "Welcome to SpotSave! Select a playlist to keep safe. For help view the 'Help' page"
+        "Welcome to TuneBacker! Select a playlist to keep safe. For help view the 'Help' page"
       );
       toastShown.current.firstTimeUser = true;
     }

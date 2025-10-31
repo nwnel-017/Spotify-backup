@@ -108,7 +108,7 @@ exports.verifyUser = async (req, res) => {
   try {
     const session = await authService.verifyUser(token);
     authService.setAuthCookies(res, session);
-    return res.redirect(`${process.env.CLIENT_URL}/home?firstTimeUser=${true}`);
+    return res.redirect(`${process.env.CLIENT_URL}/home`);
   } catch (error) {
     console.log("error verifying user: " + error);
     return res.status(500).json({

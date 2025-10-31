@@ -300,7 +300,7 @@ async function createNewPlaylist(accessToken, userId, playlistName) {
       `${process.env.SPOTIFY_API_BASE_URL}/users/${userId}/playlists`,
       {
         name,
-        description: "Restored by SpotSave",
+        description: "Restored by TuneBacker",
         public: false,
       },
       {
