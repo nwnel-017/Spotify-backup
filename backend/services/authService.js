@@ -1,12 +1,9 @@
 const { validateInput } = require("../utils/authValidation/validator");
 const bcrypt = require("bcrypt");
 const { canSendVerification } = require("../utils/ratelimiting/rateLimiter");
-// const nodemailer = require("../utils/email/nodemailer");
 const { resendEmail } = require("../utils/email/resend");
 const supabase = require("../utils/supabase/supabaseClient");
 const jwt = require("jsonwebtoken");
-
-// To do - move all token logic here
 
 function authValidation(email, password) {
   if (!email || !password) {

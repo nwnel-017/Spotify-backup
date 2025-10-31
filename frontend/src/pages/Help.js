@@ -7,7 +7,7 @@ const Help = ({ show, onClose }) => {
         <h1>About</h1>
         <div className={styles.popupText}>
           <div>
-            SpotSave is designed for music enthusiasts who want to keep their
+            TuneBacker is designed for music enthusiasts who want to keep their
             playlists safe.
           </div>
           <div>
@@ -18,18 +18,18 @@ const Help = ({ show, onClose }) => {
             Once linking your spotify account, select a playlist from the
             homepage to backup. We provide the option to save a playlist as a
             CSV file (a snapshot of your current playlist that can be restored
-            anytime), or save your playlist to be backed up weekly in SpotSave.
+            anytime), or save your playlist to be backed up weekly in
+            TuneBacker.
           </div>
           <div>
             From the 'My Backups' page, you can view and remove your weekly
             backups, or restore them to your Spotify account.
           </div>
           <div>
-            Currently SpotSave is entirely free, and you will have the option to
-            use our weekly backup feature for up to 10 playlists. This is an
-            early version of SpotSave, and more features will be added soon!
-            Soon you will be able to have a paid account with unlimited playlist
-            backups!
+            Currently TuneBacker is entirely free, and you will have the option
+            to use our weekly backup feature for up to 5 playlists. This is an
+            early version of TuneBacker, and more features will be added soon!
+            There will be options to increase your weekly backup limit soon.
           </div>
           <div>
             If you select 'Restore from a CSV File', you can upload a playist
@@ -52,9 +52,9 @@ const Help = ({ show, onClose }) => {
             entirely in the Spotify application.
           </div>
           <div>
-            SpotSave will continue to include more features as time goes on. If
-            there are any questions, issues, or features you would like to see,
-            please contact us at help@spotsave.com.
+            TuneBacker will continue to include more features as time goes on.
+            If there are any questions, issues, or features you would like to
+            see, please contact us at tunebacker.help@gmail.com
           </div>
         </div>
       </div>

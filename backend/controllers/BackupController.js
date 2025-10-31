@@ -2,7 +2,7 @@ const {
   handleOneTimeBackup,
   retrieveBackups,
   removeBackup,
-  createAndFillPlaylist,
+  // createAndFillPlaylist,
 } = require("../services/backupService");
 
 const {
@@ -99,36 +99,36 @@ async function deleteBackup(req, res) {
 }
 
 // this should be able to restore - even if we don't have access to a spotify account
-async function restorePlaylist(req, res) {
-  const accessToken = req.spotifyAccessToken;
-  const userId = req.spotifyId;
-  const trackIds = req.trackIds;
-  const playlistName = req.playlistName;
+// async function restorePlaylist(req, res) {
+//   const accessToken = req.spotifyAccessToken;
+//   const userId = req.spotifyId;
+//   const trackIds = req.trackIds;
+//   const playlistName = req.playlistName;
 
-  if (!accessToken || !userId) {
-    return res.status(401).json({ message: "Missing spotify authorization!" });
-  }
+//   if (!accessToken || !userId) {
+//     return res.status(401).json({ message: "Missing spotify authorization!" });
+//   }
 
-  if (!trackIds || !playlistName) {
-    console.log("Missing params!");
-    return res.status(500).json({
-      message: "Error - missing track Ids or playlist name in controller!",
-    });
-  }
+//   if (!trackIds || !playlistName) {
+//     console.log("Missing params!");
+//     return res.status(500).json({
+//       message: "Error - missing track Ids or playlist name in controller!",
+//     });
+//   }
 
-  try {
-    await createAndFillPlaylist(accessToken, userId, playlistName, trackIds);
-    return res.status(200).json({ message: "Sucessfully restored playlist" });
-  } catch (error) {
-    console.log("Error in Backup Controller: " + error);
-    return res.status(500).json({ message: "Error in Backup Controller!" });
-  }
-}
+//   try {
+//     await createAndFillPlaylist(accessToken, userId, playlistName, trackIds);
+//     return res.status(200).json({ message: "Sucessfully restored playlist" });
+//   } catch (error) {
+//     console.log("Error in Backup Controller: " + error);
+//     return res.status(500).json({ message: "Error in Backup Controller!" });
+//   }
+// }
 
 module.exports = {
   enableWeeklyBackup,
   oneTimeBackup,
   getMyBackups,
   deleteBackup,
-  restorePlaylist,
+  // restorePlaylist,
 };

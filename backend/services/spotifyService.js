@@ -1,7 +1,6 @@
 require("dotenv").config();
 const axios = require("axios");
 const supabase = require("../utils/supabase/supabaseClient");
-const nodemailer = require("../utils/email/nodemailer");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const crypto = require("../utils/crypto");
