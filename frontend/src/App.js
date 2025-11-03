@@ -8,6 +8,7 @@ import Restore from "./pages/Restore.js";
 import Home from "./pages/Home.js";
 import Help from "./pages/Help.js";
 import Backups from "./pages/Backups.js";
+import PrivacyPolicy from "./pages/PrivacyPolicy.js";
 import LandingPage from "./pages/LandingPage.js";
 import GlobalLoading from "./context/GlobalLoading";
 
@@ -43,6 +44,7 @@ function App() {
         />
         <Route path="/login" element={<Login />} />
         <Route path="/help" element={<Help />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route
           path="/backups"
           element={
