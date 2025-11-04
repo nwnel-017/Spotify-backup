@@ -11,6 +11,7 @@ const Sidebar = ({
   viewBackups,
   viewHelp,
   viewPrivacyPolicy,
+  unlinkSpotify,
   logout,
 }) => {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ const Sidebar = ({
         <li onClick={() => viewBackups()}>My Backups</li>
         <li onClick={() => viewHelp()}>Help</li>
         <li onClick={() => viewPrivacyPolicy()}>Privacy Policy</li>
+        <li onClick={() => unlinkSpotify()}>Unlink Spotify</li>
         <li onClick={() => logout()}>Logout</li>
       </ul>
     </div>

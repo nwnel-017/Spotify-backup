@@ -18,18 +18,30 @@ const Help = ({ show, onClose }) => {
             Once linking your spotify account, select a playlist from the
             homepage to backup. We provide the option to save a playlist as a
             CSV file (a snapshot of your current playlist that can be restored
-            anytime), or save your playlist to be backed up weekly in
-            TuneBacker.
+            anytime), or save your playlist to be saved weekly in TuneBacker.
+          </div>
+          <div>
+            It is important to note that if you select to save a playlist weekly
+            - TuneBacker saves a snapshot of your current playlist every week,
+            using metadata from the playlist at that time. You have full
+            ownership and control over this data, and can delete it from
+            TuneBacker at any time.
           </div>
           <div>
             From the 'My Backups' page, you can view and remove your weekly
             backups, or restore them to your Spotify account.
           </div>
           <div>
-            Currently TuneBacker is entirely free, and you will have the option
-            to use our weekly backup feature for up to 5 playlists. This is an
-            early version of TuneBacker, and more features will be added soon!
-            There will be options to increase your weekly backup limit soon.
+            If you restore a playlist - TuneBacker creates a new playlist with
+            the same name and tracks, using metadata from the playlist you
+            selected to save weekly. TuneBacker does <strong>not</strong> add
+            any playlists to your Spotify account without your permission.
+          </div>
+          <div>
+            Currently TuneBacker is entirely free, and there is no limit to how
+            many playlists you can save as a file. However, our weekly backup
+            feature is only available for up to 5 playlists. This is an early
+            version of TuneBacker, and more features will be added soon.
           </div>
           <div>
             If you select 'Restore from a CSV File', you can upload a playist

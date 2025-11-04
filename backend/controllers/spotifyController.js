@@ -130,6 +130,10 @@ exports.handleCallback = async (req, res) => {
   }
 };
 
+exports.unlinkSpotify = async (req, res) => {
+  return res.status(200).json({ message: "Unlink endpoint hit" });
+};
+
 exports.getPlaylistTracks = async (req, res) => {
   const playlistId = req.params.playlistId;
   const accessToken = req.accessToken;

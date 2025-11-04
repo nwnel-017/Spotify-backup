@@ -39,6 +39,17 @@ export const startSpotifyAuth = async (mode = "link") => {
   }
 };
 
+export const unlinkSpotifyAccount = async () => {
+  // To Do:
+  // Call backend API to unlink Spotify account
+  try {
+    await api.post("/spotify/unlink");
+  } catch (error) {
+    console.log("Error unlinking Spotify account: " + error);
+    throw error;
+  }
+};
+
 export const fetchUserPlaylists = async (offset = 0, limit = 50) => {
   const res = await api.get("/spotify/playlists", {
     params: { offset, limit },

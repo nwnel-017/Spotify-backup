@@ -320,6 +320,16 @@ body {
   gap: 1rem;
 }
 
+.confirmOptions {
+  width: 100%;
+  display: flex;
+  justify-content: space-evenly;
+}
+
+.confirmBtn {
+  cursor: pointer;
+}
+
 .ynBtn {
   width: 10%;
   font-size: 0.8rem;

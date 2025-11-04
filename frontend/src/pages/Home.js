@@ -8,6 +8,7 @@ import Backups from "./Backups";
 import Help from "./Help";
 import AccountNotLinked from "../components/AccountNotLinked";
 import PrivacyPolicy from "./PrivacyPolicy";
+import UnlinkAccount from "../components/UnlinkAccount";
 import {
   getSpotifyProfile,
   startSpotifyAuth,
@@ -39,6 +40,7 @@ const Home = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [viewBackups, setViewBackups] = useState(false);
   const [viewHelpPage, setViewHelpPage] = useState(false);
+  const [viewUnlinkAccount, setViewUnlinkAccount] = useState(false);
 
   const handleUnauthorized = async () => {
     console.log("User is not logged in. Redirecting to login page.");
@@ -194,7 +196,15 @@ const Home = () => {
           setCurrentView("privacy");
           setSidebarOpen(!sidebarOpen);
         }}
+        unlinkSpotify={() => {
+          setViewUnlinkAccount(!viewUnlinkAccount);
+          setSidebarOpen(!sidebarOpen);
+        }}
         logout={() => handleLogout()}
+      />
+      <UnlinkAccount
+        isOpen={viewUnlinkAccount}
+        onClose={() => setViewUnlinkAccount(!viewUnlinkAccount)}
       />
       <div className={styles.componentContainer}>{renderContent()}</div>
     </div>

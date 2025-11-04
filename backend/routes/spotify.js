@@ -6,6 +6,7 @@ const {
   getPlaylists,
   getProfile,
   getRefreshToken,
+  unlinkSpotify,
 } = require("../controllers/spotifyController");
 const authMiddleware = require("../middleware/authMiddleware");
 const spotifyAuthMiddleware = require("../middleware/spotifyAuthMiddleware");
@@ -23,6 +24,8 @@ router.get(
 
 //GET profile info
 router.get("/profile", authMiddleware, spotifyAuthMiddleware, getProfile);
+
+router.post("/unlink", authMiddleware, spotifyAuthMiddleware, unlinkSpotify);
 
 // POST to refresh access token
 // router.post("/refresh_token", authMiddleware, getRefreshToken);
