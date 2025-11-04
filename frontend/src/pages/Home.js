@@ -7,6 +7,7 @@ import Sidebar from "../components/Sidebar";
 import Backups from "./Backups";
 import Help from "./Help";
 import AccountNotLinked from "../components/AccountNotLinked";
+import PrivacyPolicy from "./PrivacyPolicy";
 import {
   getSpotifyProfile,
   startSpotifyAuth,
@@ -17,7 +18,7 @@ import "../App.css";
 import styles from "./styles/Home.module.css";
 
 const Home = () => {
-  const { user, getUser, authLoading } = useAuth();
+  const { user, authLoading } = useAuth();
   const { search } = useLocation();
   const params = new URLSearchParams(search);
   const playlistRestored = params.get("playlistRestored");
@@ -135,6 +136,9 @@ const Home = () => {
 
     if (currentView === "backups") return <Backups />;
 
+    if (currentView === "privacy")
+      return <PrivacyPolicy onClose={() => setCurrentView("playlists")} />;
+
     if (accountNotLinked)
       return <AccountNotLinked linkAccount={() => linkAccount()} />;
 
@@ -184,6 +188,10 @@ const Home = () => {
         }}
         viewHelp={() => {
           setCurrentView("help");
+          setSidebarOpen(!sidebarOpen);
+        }}
+        viewPrivacyPolicy={() => {
+          setCurrentView("privacy");
           setSidebarOpen(!sidebarOpen);
         }}
         logout={() => handleLogout()}
