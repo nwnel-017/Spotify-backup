@@ -15,17 +15,15 @@ const PrivacyPolicy = ({ show, onClose }) => {
           <h2>1. Information We Collect</h2>
           <p>
             When you connect your Spotify account, we access limited data
-            through Spotify’s Web API, including:
+            through Spotify’s Web API, including: a) Your Spotify user ID and
+            display name b) Playlist IDs and the track IDs contained in your
+            playlists
           </p>
-          <ul>
-            <li>Your Spotify user ID and display name</li>
-            <li>Playlist IDs and the track IDs contained in your playlists</li>
-          </ul>
           <p>
             To keep you connected to Spotify, we securely store authentication
             information (such as tokens) in encrypted form. This information is
-            used only to maintain your connection and is deleted if you unlink
-            your account
+            used only to maintain your connection and is promptly deleted when
+            you unlink your account or revoke access.
           </p>
           <p>
             We do <strong>not</strong> store any other sensitive data, such as
@@ -38,8 +36,8 @@ const PrivacyPolicy = ({ show, onClose }) => {
 
           <h2>2. How We Use Your Information</h2>
           <p>
-            We use the collected data solely to provide playlist backup and
-            restore functionality. We do <strong>not</strong> use your
+            We use the collected data solely to provide playlist saving and
+            restoring functionality. We do <strong>not</strong> use your
             information for advertising or analytics, and we do not sell or
             share your data with third parties.
           </p>
@@ -54,21 +52,24 @@ const PrivacyPolicy = ({ show, onClose }) => {
           <h2>4. Data Retention and Deletion</h2>
           <ul>
             <li>
-              Your playlist backups remain stored until you delete them or
+              Your saved playlists will remain stored until you delete them or
               unlink your Spotify account.
             </li>
             <li>
-              You can delete your backups or disconnect Spotify at any time from
-              within the app.
+              You can delete your saved playlists or disconnect Spotify at any
+              time from within the app.
             </li>
             <li>
-              When you disconnect, all associated Spotify data (including
-              backups) is permanently deleted from our servers.
+              When you disconnect, TuneBacker will immediately stop updating
+              your saved playlists.
             </li>
           </ul>
           <p>
             You may also revoke our access to your Spotify account directly at{" "}
-            <a href="https://www.spotify.com/account/apps">
+            <a
+              href="https://www.spotify.com/account/apps"
+              className={styles.link}
+            >
               https://www.spotify.com/account/apps
             </a>
             .
@@ -93,12 +94,13 @@ const PrivacyPolicy = ({ show, onClose }) => {
           <h2>6. Your Rights</h2>
           <ul>
             <li>Access and review the Spotify data we store</li>
-            <li>Delete your backups at any time</li>
+            <li>Delete your saved playlist snapshots at any time</li>
             <li>Revoke Spotify access at any time</li>
           </ul>
           <p>
-            If you revoke Spotify access, we automatically delete all stored
-            data associated with your account.
+            If you revoke Spotify access, TuneBacker will stop updating your
+            saved playlists. You can choose to delete your stored data at any
+            time from within the app.
           </p>
 
           <h2>7. Changes to This Policy</h2>
@@ -112,8 +114,11 @@ const PrivacyPolicy = ({ show, onClose }) => {
             If you have questions about this privacy policy or your data, please
             contact us at:
           </p>
+          <p>tunebacker.help@gmail.com</p>
           <p>
-            <strong>Email:</strong> support@[yourappdomain].com
+            TuneBacker uses Spotify’s Web API and OAuth authentication in
+            accordance with Spotify’s Developer Terms of Service . TuneBacker is
+            not affiliated with or endorsed by Spotify AB.
           </p>
         </div>
       </div>

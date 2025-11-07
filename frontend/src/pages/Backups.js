@@ -122,7 +122,7 @@ const Backups = () => {
     <div>
       <section className={styles.playlistSection}>
         <div className={styles.playlistsHeader}>
-          <h5>Select a Backup to Remove or Restore</h5>
+          <h5>Select a Saved Playlist to Remove or Restore</h5>
         </div>
       </section>
 

@@ -8,53 +8,8 @@ const supabase = require("../utils/supabase/supabaseClient");
 // gets all weekly backups from supabase
 // adds them to activeJobs map in memory
 async function scheduleJobs() {
-  // To Do:
-  // get all backups from supabase where active = true
-  // schedule one cron job -
-  // const { data, error } = await supabase
-  //   .from("weekly_backups")
-  //   .select("playlist_id, user_id, playlist_name");
-
-  // if (error || !data) {
-  //   console.log("No playlists to backup!");
-  //   return;
-  // }
-
-  // try {
-  //   for (const row of data) {
-  //     const playlistId = row.playlist_id;
-  //     const userId = row.user_id; // supabase user
-  //     const playlistName = row.playlist_name;
-
-  //     if (activeJobs.has(playlistId)) {
-  //       console.log("Job already scheduled!");
-  //       continue;
-  //     }
-  //     console.log(
-  //       `Scheduling weekly backup for playlist ${playlistName} - ${playlistId}`
-  //     );
-  //     const task = cron.schedule("0 3 * * 0", async () => {
-  //       console.log(`Running weekly backup for playlist ${playlistId}...`);
-  //       try {
-  //         await handleWeeklyBackup({
-  //           supabaseUser: userId,
-  //           playlistId: playlistId,
-  //           playlistName: playlistName,
-  //         });
-  //         console.log("Weekly backup completed");
-  //       } catch (err) {
-  //         console.error("Weekly backup failed", err);
-  //         throw err;
-  //       }
-  //     });
-  //     activeJobs.set(playlistId, task);
-  //   }
-  // } catch (err) {
-  //   console.log("Unable to schedule weekly backup: " + err);
-  // }
   try {
-    // cron.schedule("0 3 * * 0", runJobs);
-    cron.schedule("0 * * * *", runJobs);
+    cron.schedule("0 3 * * 0", runJobs);
   } catch (err) {
     console.log("Unable to schedule weekly backup runner: " + err);
     throw new Error("failed to schedule jobs!");
@@ -102,6 +57,8 @@ async function runJobs() {
   }
 }
 
+// function to schedule a new weekly backup job
+// called when user enables weekly backup in UI
 async function scheduleBackup(config) {
   const { supabaseUser, playlistId, playlistName } = config; // the playlist id needs to be playlist id in spotify
 
@@ -112,7 +69,6 @@ async function scheduleBackup(config) {
     .from("weekly_backups")
     .select("playlist_id")
     .eq("user_id", supabaseUser);
-  // .eq("playlist_id", playlistId);
 
   if (!error && existingBackups.length >= 5) {
     // let frontend know they cannot exceed the limit
@@ -139,22 +95,6 @@ async function scheduleBackup(config) {
     console.error("Initial backup failed", err);
     throw err;
   }
-
-  // Run every Monday at 9 AM
-  // when called by a cron - is should not be called with an access token to trigger an automatic refresh
-  // handleWeeklyBackup - should be called with {supabaseUser, playlistId, playlistName}
-  // cron schedule -> 0 9 * * 1 = every monday 9 am
-  // const task = cron.schedule("0 3 * * 0", async () => {
-  //   console.log(`Running weekly backup for playlist ${playlistId}...`);
-  //   try {
-  //     await handleWeeklyBackup({ supabaseUser, playlistId, playlistName });
-  //     console.log("Weekly backup completed");
-  //   } catch (err) {
-  //     console.error("Weekly backup failed", err);
-  //     throw err;
-  //   }
-  // });
-  // activeJobs.set(playlistId, task);
 }
 
 module.exports = {

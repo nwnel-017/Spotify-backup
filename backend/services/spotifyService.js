@@ -99,8 +99,16 @@ async function unlinkSpotifyAccount(userId) {
     .delete()
     .eq("user_id", userId);
 
-  // To Do:
   // mark active flag in weekly_backups as false for all playlists
+  const { error: updateError } = await supabase
+    .from("weekly_backups")
+    .update({ active: false })
+    .eq("user_id", userId);
+
+  if (updateError) {
+    console.error("Error disabling weekly backups:", updateError);
+    throw new Error("Failed to deactivate weekly backups");
+  }
 
   if (error) {
     console.error("Error unlinking Spotify account:", error);

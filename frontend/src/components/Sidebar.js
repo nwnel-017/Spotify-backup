@@ -27,7 +27,7 @@ const Sidebar = ({
           />
         </li>
         <li onClick={() => goHome()}>Home</li>
-        <li onClick={() => viewBackups()}>My Backups</li>
+        <li onClick={() => viewBackups()}>My Saved Playlists</li>
         <li onClick={() => viewHelp()}>Help</li>
         <li onClick={() => viewPrivacyPolicy()}>Privacy Policy</li>
         <li onClick={() => unlinkSpotify()}>Unlink Spotify</li>

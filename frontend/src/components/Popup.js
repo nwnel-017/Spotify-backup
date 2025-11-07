@@ -46,7 +46,7 @@ const Popup = ({ playlist, show, onClose }) => {
     },
     onSuccess: (data) => {
       toast.success(
-        "Successfully backed up playlist! View 'Backups' page to manage your backup"
+        "Successfully saved playlist! View 'My Saved Playlists' page to manage your backup"
       );
       queryClient.invalidateQueries(["spotify-backups"]);
     },
@@ -92,7 +92,7 @@ const Popup = ({ playlist, show, onClose }) => {
             onClick={() => handleWeeklyBackup(playlistId, playlistName)}
           >
             <FontAwesomeIcon icon={faArrowRotateRight} />
-            <span>Keep my playlist secure with a weekly backup</span>
+            <span>Keep my playlist secure by saving it weekly</span>
           </div>
         </div>
       </div>

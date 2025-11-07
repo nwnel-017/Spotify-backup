@@ -77,16 +77,6 @@ async function handleWeeklyBackup({
       console.log(
         "not called with an access token. initiating automatica refresh"
       );
-      // const { data: tokenData, error: tokenError } = await supabase
-      //   .from("spotify_users")
-      //   .select("refresh_token")
-      //   .eq("user_id", supabaseUser)
-      //   .single();
-
-      // if (tokenError || !tokenData || !tokenData.refresh_token) {
-      //   console.log("Error retrieving refresh token");
-      //   throw new Error("Failed to fetch refresh token!");
-      // }
 
       // To Do: decrypt token first
       let decrypted;
@@ -120,7 +110,6 @@ async function handleWeeklyBackup({
     }
 
     // verify playist still exists - if not - disable backup from continuing weekly
-    // To do: make call to GET https://api.spotify.com/v1/playlists/${playlist_id}/followers/contains?ids=${user_spotify_id}
     // either returns true or false
     try {
       const followerRes = await axios.get(
@@ -146,12 +135,6 @@ async function handleWeeklyBackup({
     } catch (existingPlaylistError) {
       console.log("playlist not found: " + existingPlaylistError);
       throw new Error("Error verifying playlist exists");
-      // await supabase // ok this worked - but now every playlist got disabled
-      //   .from("weekly_backups")
-      //   .update({ active: false })
-      //   .eq("playlist_id", playlistId)
-      //   .eq("user_id", supabaseUser);
-      // return;
     }
 
     const currentTracks = await fetchPlaylistTracks(validToken, playlistId);
@@ -176,15 +159,6 @@ async function handleWeeklyBackup({
       // ignore "no rows found"
       throw fetchError;
     }
-
-    // this error should be moved to the scheduleBackup function when initially scheduling
-    // right now if a user has 5 backups this will error every week
-    // if (count >= 5) {
-    //   // let frontend know they cannot exceed the limit
-    //   const limitError = new Error("MAX_BACKUPS_REACHED");
-    //   limitError.code = "MAX_BACKUPS_REACHED"; // custom code for the frontend
-    //   throw limitError;
-    // }
 
     const lastBackup = backups.find((b) => b.playlist_id === playlistId);
 
@@ -223,51 +197,6 @@ async function handleWeeklyBackup({
 
   console.log("Weekly backup saved");
 }
-
-// test function to see why token refresh isnt working
-// async function refreshTokenTest() {
-//   const { data, error } = await supabase.from("users").select("id").single();
-
-//   if (error || !data) {
-//     throw new Error("didnt get user");
-//   }
-
-//   const supabaseUser = data.id;
-
-//   console.log("1.) retrieved supabase id: " + supabaseUser); //success
-
-//   const { data: tokenData, error: tokenError } = await supabase
-//     .from("spotify_users")
-//     .select("refresh_token")
-//     .eq("user_id", supabaseUser)
-//     .single();
-
-//   if (tokenError || !tokenData || !tokenData.refresh_token) {
-//     console.log("Error retrieving refresh token");
-//     throw new Error("Failed to fetch refresh token!");
-//   }
-
-//   console.log(
-//     "2.) refresh token fetched from supabase: " + tokenData.refresh_token //success
-//   );
-
-//   const clientId = process.env.SPOTIFY_CLIENT_ID || "";
-//   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET || "";
-
-//   // this is failing
-//   const tokenResponse = await spotifyService.refreshSpotifyToken(
-//     tokenData.refresh_token,
-//     clientId,
-//     clientSecret
-//   );
-
-//   const refreshedToken = tokenResponse?.data?.access_token;
-
-//   if (!refreshedToken) {
-//     throw new Error("Unable to refresh token!");
-//   }
-//   console.log("refreshed token: " + refreshedToken);
-// }
 
 async function handleOneTimeBackup({ accessToken, supabaseUser, playlistId }) {
   if (!accessToken || !playlistId || !supabaseUser) {
@@ -328,5 +257,4 @@ module.exports = {
   handleOneTimeBackup,
   retrieveBackups,
   removeBackup,
-  // refreshTokenTest, //remove later
 };

@@ -7,8 +7,8 @@ const Help = ({ show, onClose }) => {
         <h1>About</h1>
         <div className={styles.popupText}>
           <div>
-            TuneBacker is designed for music enthusiasts who want to keep their
-            playlists safe.
+            TuneBacker is designed for Spotify users who want an easy way to
+            back up their playlists safely.
           </div>
           <div>
             With a growing number of playlists, why worry about losing access to
@@ -16,57 +16,69 @@ const Help = ({ show, onClose }) => {
           </div>
           <div>
             Once linking your spotify account, select a playlist from the
-            homepage to backup. We provide the option to save a playlist as a
-            CSV file (a snapshot of your current playlist that can be restored
-            anytime), or save your playlist to be saved weekly in TuneBacker.
+            homepage to save. We provide the option to save a playlist to your
+            device as a .CSV file, or choose to have your playlist saved weekly
+            in TuneBacker. Playlists that you choose to be saved weekly will be
+            updated every Monday.
           </div>
           <div>
-            It is important to note that if you select to save a playlist weekly
-            - TuneBacker saves a snapshot of your current playlist every week,
-            using metadata from the playlist at that time. You have full
-            ownership and control over this data, and can delete it from
-            TuneBacker at any time.
+            When we save your playlist, we only save its metadata, such as
+            playlist name track IDs from spotify. No audio files or playback
+            data are ever stored or streamed. This creates a simple snapshot of
+            your playlist’s structure at that moment in time.
           </div>
           <div>
-            From the 'My Backups' page, you can view and remove your weekly
-            backups, or restore them to your Spotify account.
+            You can view and manage your saved backups anytime in the “My Saved
+            Playlists” page. You can delete any backup whenever you wish.
           </div>
           <div>
-            If you restore a playlist - TuneBacker creates a new playlist with
-            the same name and tracks, using metadata from the playlist you
-            selected to save weekly. TuneBacker does <strong>not</strong> add
-            any playlists to your Spotify account without your permission.
+            If you lose access to your playlist and wish to restore it, you can
+            do so from the 'My Saved Playlists' page. We will create a new
+            playlist in your spotify account with the same name and same tracks
+            as your old playlist.
+          </div>
+          <div>
+            You can also restore playlists from a .CSV file you previously
+            downloaded.
+          </div>
+          <div>
+            TuneBacker does <strong>not</strong> add any playlists to your
+            Spotify account without your permission.
           </div>
           <div>
             Currently TuneBacker is entirely free, and there is no limit to how
-            many playlists you can save as a file. However, our weekly backup
-            feature is only available for up to 5 playlists. This is an early
-            version of TuneBacker, and more features will be added soon.
+            many playlists you can save to your device as a .CSV file. However,
+            our weekly backup feature is only available for up to 5 playlists.
+            This is an early version of TuneBacker, and more features will be
+            added soon.
           </div>
           <div>
-            If you select 'Restore from a CSV File', you can upload a playist
-            you backed up to a file.
+            If you lose access to your Spotify account, you can link a new
+            Spotify account and use TuneBacker to recreate your playlists there.
+            Please note that if your original Spotify account is disconnected or
+            deleted, TuneBacker will stop updating your saved playlist snapshots
+            automatically. You will still be able to restore your saved data
+            while it remains in TuneBacker, or you may delete it at any time.
           </div>
           <div>
-            When you select a restore option, you will be asked to login to a
-            spotify account where the playlist will be restored.
+            When your account is unlinked, you can remove your saved playlists
+            from TuneBacker, or select to restore them to a spotify account.
           </div>
           <div>
-            If you lost access to your linked spotify account, don't worry! When
-            you sign in to restore a playlist, you can restore the playlist to
-            any Spotify account.
-          </div>
-          <div>
-            Security and privacy is our primary concern. Anytime you login
-            through Spotify to link your account or restore a playlist, we do
-            not store any confidential information, such as your email or
-            password. We use Spotify only for a one-time sign in, which occurs
-            entirely in the Spotify application.
+            Security and privacy are a top priority. TuneBacker never stores
+            your Spotify password or email. Authentication happens securely
+            through Spotify’s official login process.
           </div>
           <div>
             TuneBacker will continue to include more features as time goes on.
             If there are any questions, issues, or features you would like to
-            see, please contact us at tunebacker.help@gmail.com
+            see, please contact us at tunebacker.help@gmail.com.
+          </div>
+          <div>
+            TuneBacker uses Spotify’s Web API and OAuth authentication in
+            accordance with Spotify’s Developer Terms of Service . All Spotify
+            content displayed or processed through TuneBacker follows Spotify’s
+            data and branding requirements.
           </div>
         </div>
       </div>

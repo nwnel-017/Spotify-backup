@@ -20,6 +20,11 @@ body {
   margin-top: 1rem;
 }
 
+.link {
+  color: var(--spotify-text-color);
+  text-decoration: underline;
+}
+
 .loginPage {
   text-align: center;
   display: flex;
