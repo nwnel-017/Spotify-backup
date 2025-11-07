@@ -44,6 +44,7 @@ export const unlinkSpotifyAccount = async () => {
   // Call backend API to unlink Spotify account
   try {
     await api.post("/spotify/unlink");
+    window.location.reload();
   } catch (error) {
     console.log("Error unlinking Spotify account: " + error);
     throw error;

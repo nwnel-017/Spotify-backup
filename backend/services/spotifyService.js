@@ -89,6 +89,25 @@ async function handleOAuth(code, parsedState) {
   }
 }
 
+async function unlinkSpotifyAccount(userId) {
+  if (!userId) {
+    throw new Error("Missing user ID for unlinking Spotify account");
+  }
+
+  const { error } = await supabase
+    .from("spotify_users")
+    .delete()
+    .eq("user_id", userId);
+
+  // To Do:
+  // mark active flag in weekly_backups as false for all playlists
+
+  if (error) {
+    console.error("Error unlinking Spotify account:", error);
+    throw new Error("Failed to unlink Spotify account");
+  }
+}
+
 async function restorePlaylistFromStorage(nonce, spotifyId, tokens) {
   const { accessToken } = tokens;
   if (!nonce || !spotifyId || !accessToken) {
@@ -638,4 +657,5 @@ module.exports = {
   getPlaylists,
   getProfileInfo,
   refreshSpotifyToken,
+  unlinkSpotifyAccount,
 };

@@ -36,10 +36,7 @@ async function fetchPlaylistTracks(accessToken, playlistId) {
       url = data.next;
     }
   } catch (fetchError) {
-    console.log(
-      "Encountered error fetching playlist tracks from Spotify during scheduled backup: " +
-        fetchError
-    );
+    console.error("Error fetching playlist tracks:", fetchError);
     throw new Error(fetchError);
   }
 
@@ -59,20 +56,37 @@ async function handleWeeklyBackup({
   try {
     let validToken = spotifyAccessToken; // only passed in when user initially schedules a weekly backup
 
+    const { data: tokenData, error: tokenError } = await supabase
+      .from("spotify_users")
+      .select("refresh_token, spotify_user")
+      .eq("user_id", supabaseUser)
+      .single();
+    if (
+      tokenError ||
+      !tokenData ||
+      !tokenData.refresh_token ||
+      !tokenData.spotify_user
+    ) {
+      console.log("Error retrieving refresh token");
+      throw new Error("Failed to fetch refresh token!");
+    }
+
+    const spotifyId = tokenData.spotify_user;
+
     if (!validToken) {
       console.log(
         "not called with an access token. initiating automatica refresh"
       );
-      const { data: tokenData, error: tokenError } = await supabase
-        .from("spotify_users")
-        .select("refresh_token")
-        .eq("user_id", supabaseUser)
-        .single();
+      // const { data: tokenData, error: tokenError } = await supabase
+      //   .from("spotify_users")
+      //   .select("refresh_token")
+      //   .eq("user_id", supabaseUser)
+      //   .single();
 
-      if (tokenError || !tokenData || !tokenData.refresh_token) {
-        console.log("Error retrieving refresh token");
-        throw new Error("Failed to fetch refresh token!");
-      }
+      // if (tokenError || !tokenData || !tokenData.refresh_token) {
+      //   console.log("Error retrieving refresh token");
+      //   throw new Error("Failed to fetch refresh token!");
+      // }
 
       // To Do: decrypt token first
       let decrypted;
@@ -105,6 +119,41 @@ async function handleWeeklyBackup({
       console.log("valid access token provided");
     }
 
+    // verify playist still exists - if not - disable backup from continuing weekly
+    // To do: make call to GET https://api.spotify.com/v1/playlists/${playlist_id}/followers/contains?ids=${user_spotify_id}
+    // either returns true or false
+    try {
+      const followerRes = await axios.get(
+        `https://api.spotify.com/v1/playlists/${playlistId}/followers/contains?ids=${spotifyId}`,
+        {
+          headers: { Authorization: `Bearer ${validToken}` },
+        }
+      );
+
+      if (!followerRes.data[0]) {
+        console.log(
+          `playlist ${playlistName} not found for user ${spotifyId}, disabling backup...`
+        );
+        await supabase // ok this worked - but now every playlist got disabled
+          .from("weekly_backups")
+          .update({ active: false })
+          .eq("playlist_id", playlistId)
+          .eq("user_id", supabaseUser);
+        return;
+      }
+
+      console.log("playlist found, continuing backup...");
+    } catch (existingPlaylistError) {
+      console.log("playlist not found: " + existingPlaylistError);
+      throw new Error("Error verifying playlist exists");
+      // await supabase // ok this worked - but now every playlist got disabled
+      //   .from("weekly_backups")
+      //   .update({ active: false })
+      //   .eq("playlist_id", playlistId)
+      //   .eq("user_id", supabaseUser);
+      // return;
+    }
+
     const currentTracks = await fetchPlaylistTracks(validToken, playlistId);
     const currentHash = generateHash(currentTracks);
 
@@ -128,12 +177,14 @@ async function handleWeeklyBackup({
       throw fetchError;
     }
 
-    if (count >= 5) {
-      // let frontend know they cannot exceed the limit
-      const limitError = new Error("MAX_BACKUPS_REACHED");
-      limitError.code = "MAX_BACKUPS_REACHED"; // custom code for the frontend
-      throw limitError;
-    }
+    // this error should be moved to the scheduleBackup function when initially scheduling
+    // right now if a user has 5 backups this will error every week
+    // if (count >= 5) {
+    //   // let frontend know they cannot exceed the limit
+    //   const limitError = new Error("MAX_BACKUPS_REACHED");
+    //   limitError.code = "MAX_BACKUPS_REACHED"; // custom code for the frontend
+    //   throw limitError;
+    // }
 
     const lastBackup = backups.find((b) => b.playlist_id === playlistId);
 
@@ -157,6 +208,7 @@ async function handleWeeklyBackup({
             playlist_name: playlistName,
             backup_data: currentTracks,
             hash: currentHash,
+            active: true,
           },
         ],
         { onConflict: ["playlist_id"] }

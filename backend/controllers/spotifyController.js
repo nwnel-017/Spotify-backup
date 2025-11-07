@@ -1,6 +1,7 @@
 const spotifyService = require("../services/spotifyService");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const { auth } = require("../utils/supabase/supabaseClient");
 
 exports.search = async (req, res) => {
   try {
@@ -131,7 +132,20 @@ exports.handleCallback = async (req, res) => {
 };
 
 exports.unlinkSpotify = async (req, res) => {
-  return res.status(200).json({ message: "Unlink endpoint hit" });
+  const supabaseUser = req.supabaseUser;
+  if (!supabaseUser) {
+    return res.status(401).json({ message: "Unauthorized: Missing user ID" });
+  }
+
+  try {
+    await spotifyService.unlinkSpotifyAccount(supabaseUser);
+    return res.status(200).json({ message: "Account has been unlinked!" });
+  } catch (error) {
+    console.error("Error unlinking Spotify account", error);
+    return res
+      .status(500)
+      .json({ message: "Failed to unlink Spotify account" });
+  }
 };
 
 exports.getPlaylistTracks = async (req, res) => {

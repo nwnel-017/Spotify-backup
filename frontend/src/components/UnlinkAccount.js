@@ -40,6 +40,10 @@ const UnlinkAccount = ({ isOpen, onClose }) => {
             </h3>
           </span>
         </div>
+        <h3 className={styles.popupText}>
+          You will still have access to your copied playlists until you delete
+          them, but weekly saves will not occur
+        </h3>
       </div>
     </div>
   );

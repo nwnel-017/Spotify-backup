@@ -5,10 +5,7 @@ const {
   // createAndFillPlaylist,
 } = require("../services/backupService");
 
-const {
-  scheduleBackup,
-  cancelWeeklyBackup,
-} = require("../jobs/weeklyBackup.js");
+const { scheduleBackup } = require("../jobs/weeklyBackup.js");
 
 async function getMyBackups(req, res) {
   const { supabaseUser } = req; // remove spotify access token
@@ -87,10 +84,7 @@ async function oneTimeBackup(req, res) {
 
 async function deleteBackup(req, res) {
   try {
-    cancelWeeklyBackup(req.params.playlistId);
-
     await removeBackup(req.params.playlistId);
-
     return res.status(200).json({ message: "successfully deleted backup" });
   } catch (error) {
     console.error("Error deleting backup:", error);
