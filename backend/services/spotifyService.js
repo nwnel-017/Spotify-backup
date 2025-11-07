@@ -387,8 +387,7 @@ async function buildOAuthUrl({
   trackIds = null,
   userId,
 }) {
-  const scope =
-    "playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public";
+  const scope = process.env.SPOTIFY_OAUTH_SCOPES || "";
 
   let statePayload;
 
